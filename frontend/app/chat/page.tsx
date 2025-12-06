@@ -342,19 +342,19 @@ export default function ChatPage() {
     // Show loading while checking auth
     if (authLoading) {
         return (
-            <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
+            <div className="h-screen flex items-center justify-center gradient-bg">
                 <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-lg border border-white/30 flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <GraduationCap className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-gray-400">Loading AskUni...</p>
+                    <p className="text-white/80">Loading AskUni...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
+        <div className="flex h-screen gradient-bg overflow-hidden">
             {/* Sidebar Overlay */}
             <AnimatePresence>
                 {sidebarOpen && (

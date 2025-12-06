@@ -15,12 +15,23 @@ import {
     Bot,
     Filter,
     Menu,
-    X
+    X,
+    Target,
+    Heart
 } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 export default function HomePage() {
+    const router = useRouter();
+    const { startTrial } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const handleTryFree = () => {
+        startTrial();
+        router.push('/chat');
+    };
 
     const benefits = [
         {
@@ -114,7 +125,7 @@ export default function HomePage() {
                                 </Link>
                                 <Link
                                     href="/login"
-                                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-xs sm:text-sm shadow-lg"
+                                    className="hidden sm:block px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-xs sm:text-sm shadow-lg"
                                 >
                                     Sign Up Free
                                 </Link>
@@ -171,27 +182,67 @@ export default function HomePage() {
                             </p>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-                                <Link
-                                    href="/login"
+                                <button
+                                    onClick={handleTryFree}
                                     className="w-full sm:w-auto btn-primary shadow-xl flex items-center justify-center gap-2 group"
                                 >
-                                    <span>Start Chatting</span>
+                                    <span>Try Free (5 Questions)</span>
                                     <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
-                                </Link>
+                                </button>
                                 <Link
-                                    href="/about"
+                                    href="/login"
                                     className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl glass-input hover:bg-white/10 transition-all font-semibold text-base sm:text-lg flex items-center justify-center"
                                 >
-                                    Learn More
+                                    Sign Up Free
                                 </Link>
                             </div>
+
+                            <p className="text-xs sm:text-sm text-gray-500 mt-4">
+                                ✨ No credit card required • 5 free questions to start
+                            </p>
                         </motion.div>
                     </div>
                 </section>
 
+                {/* Mission Section */}
+                <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="glass-card p-8 sm:p-12 rounded-3xl relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 w-[200px] sm:w-[300px] h-[200px] sm:h-[300px] bg-accent-600/20 blur-[80px] sm:blur-[100px] rounded-full" />
+
+                        <div className="relative z-10 text-center">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/20 border border-primary-500/30 flex items-center justify-center mx-auto mb-6">
+                                <Target className="w-8 h-8 sm:w-10 sm:h-10 text-primary-400" />
+                            </div>
+
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6">Our Mission</h2>
+                            <div className="max-w-3xl mx-auto space-y-4 text-base sm:text-lg text-gray-300 leading-relaxed">
+                                <p>
+                                    <span className="text-primary-400 font-semibold">AskUni</span> was born from a simple observation:
+                                    students waste countless hours navigating complex university websites, waiting in long queues,
+                                    and searching for basic information that should be instantly accessible.
+                                </p>
+                                <p>
+                                    We&apos;re building an <span className="text-white font-semibold">AI-powered assistant</span> that
+                                    eliminates this frustration by providing instant, accurate answers to all your university questions—
+                                    from admissions and course details to campus events and deadlines.
+                                </p>
+                                <p className="flex items-center justify-center gap-2 text-accent-300">
+                                    <Heart className="w-5 h-5" />
+                                    <span className="font-medium">Making university life simpler, one question at a time.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </section>
+
                 {/* Key Features */}
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-                    <div className="text-center mb-10 sm:mb-16">
+                    <div className="text-center mb-12 sm:mb-16">
                         <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">Power-Packed Features</h2>
                         <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto px-4">Everything you need to navigate university life with confidence</p>
                     </div>
@@ -262,12 +313,20 @@ export default function HomePage() {
                             <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 max-w-xl mx-auto">
                                 Join thousands of students using AskUni today. It&apos;s completely free.
                             </p>
-                            <Link
-                                href="/login"
-                                className="inline-flex items-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-base sm:text-lg shadow-2xl hover:scale-105 active:scale-95 duration-300"
-                            >
-                                Sign Up Free <ArrowRight className="w-5 h-5" />
-                            </Link>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <button
+                                    onClick={handleTryFree}
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold text-base sm:text-lg shadow-2xl hover:scale-105 active:scale-95 duration-300"
+                                >
+                                    Try Free Now <ArrowRight className="w-5 h-5" />
+                                </button>
+                                <Link
+                                    href="/login"
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl glass-input hover:bg-white/10 text-white font-bold text-base sm:text-lg"
+                                >
+                                    Sign Up Free
+                                </Link>
+                            </div>
                         </motion.div>
                     </div>
                 </section>

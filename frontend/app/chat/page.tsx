@@ -98,7 +98,61 @@ export default function ChatPage() {
         if (stored) {
             setMessageCount(parseInt(stored));
         }
+
+        // Load chat history from localStorage
+        const savedMessages = localStorage.getItem('askuni_chat_messages');
+        if (savedMessages) {
+            try {
+                const parsed = JSON.parse(savedMessages);
+                // Convert timestamp strings back to Date objects
+                const messagesWithDates = parsed.map((m: Message) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp),
+                    isStreaming: false, // Reset streaming state on load
+                }));
+                setMessages(messagesWithDates);
+            } catch (e) {
+                console.error('Failed to load chat history:', e);
+            }
+        }
+
+        // Load conversations from localStorage
+        const savedConversations = localStorage.getItem('askuni_conversations');
+        if (savedConversations) {
+            try {
+                const parsed = JSON.parse(savedConversations);
+                const convsWithDates = parsed.map((c: Conversation) => ({
+                    ...c,
+                    timestamp: new Date(c.timestamp),
+                    messages: c.messages.map((m: Message) => ({
+                        ...m,
+                        timestamp: new Date(m.timestamp),
+                    })),
+                }));
+                setConversations(convsWithDates);
+            } catch (e) {
+                console.error('Failed to load conversations:', e);
+            }
+        }
     }, []);
+
+    // Save messages to localStorage whenever they change
+    useEffect(() => {
+        if (messages.length > 0) {
+            // Only save if not currently streaming
+            const isAnyStreaming = messages.some(m => m.isStreaming);
+            if (!isAnyStreaming) {
+                localStorage.setItem('askuni_chat_messages', JSON.stringify(messages));
+            }
+        }
+    }, [messages]);
+
+    // Save conversations to localStorage
+    useEffect(() => {
+        if (conversations.length > 0) {
+            localStorage.setItem('askuni_conversations', JSON.stringify(conversations));
+        }
+    }, [conversations]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -577,8 +631,8 @@ export default function ChatPage() {
                                 onClick={sendMessage}
                                 disabled={!inputValue.trim() || isLoading || (hasMessageLimit && remainingMessages <= 0)}
                                 className={`absolute right-3 bottom-3 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${inputValue.trim() && !isLoading && (!hasMessageLimit || remainingMessages > 0)
-                                        ? 'bg-primary-500 hover:bg-primary-400 text-white'
-                                        : 'bg-white/10 text-gray-500'
+                                    ? 'bg-primary-500 hover:bg-primary-400 text-white'
+                                    : 'bg-white/10 text-gray-500'
                                     }`}
                             >
                                 <ArrowUp className="w-4 h-4" />

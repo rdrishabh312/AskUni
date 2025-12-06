@@ -21,8 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
-      <body className={`${inter.className} gradient-bg min-h-screen antialiased`}>
-        {/* Animated Background Orbs */}
+      <body className={`${inter.className} min-h-screen antialiased text-white`}>
+        {/* Premium Background */}
+        <div className="gradient-bg" />
         <div className="gradient-orb orb-1" />
         <div className="gradient-orb orb-2" />
         <div className="gradient-orb orb-3" />

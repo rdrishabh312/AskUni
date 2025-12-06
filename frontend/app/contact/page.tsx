@@ -49,11 +49,7 @@ export default function ContactPage() {
     };
 
     return (
-        <div className="min-h-screen text-white relative">
-            {/* Animated Background */}
-            <div className="gradient-bg" />
-            <div className="gradient-orb orb-1" />
-            <div className="gradient-orb orb-2" />
+        <div className="min-h-screen relative">
 
             <div className="relative z-10">
                 {/* Header */}

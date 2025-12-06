@@ -248,16 +248,17 @@ export default function LoginPage() {
                                 onClick={() => { setStep('details'); setIsSignUp(true); setError(''); }}
                                 className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-primary-600 to-accent-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/20"
                             >
-                                <span className="font-bold text-lg">Sign Up Free</span>
+                                <span className="font-bold text-lg">Create New Account</span>
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
 
                             {/* Login */}
                             <button
                                 onClick={() => { setStep('email'); setIsSignUp(false); setError(''); }}
-                                className="w-full mb-6 p-4 rounded-xl glass-input hover:bg-white/10 transition-all font-medium text-gray-300 hover:text-white"
+                                className="w-full mb-6 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 hover:bg-white/5 transition-all font-bold text-gray-300 hover:text-white flex items-center justify-center gap-2"
                             >
-                                Log in
+                                <User className="w-5 h-5" />
+                                <span>Sign In to Existing Account</span>
                             </button>
 
                             {/* Divider */}
@@ -380,16 +381,21 @@ export default function LoginPage() {
                             exit={{ opacity: 0, x: -50 }}
                             className="glass-card p-8"
                         >
-                            <button onClick={goBack} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors">
-                                <ArrowLeft className="w-4 h-4" />
-                                Back
-                            </button>
+                            <div className="flex items-center gap-3 mb-6">
+                                <button onClick={goBack} className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors">
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Back
+                                </button>
+                                <div className={`px-3 py-1 rounded-full text-xs font-bold border ${isSignUp ? 'bg-primary-500/10 border-primary-500/20 text-primary-300' : 'bg-gray-700/30 border-gray-600/30 text-gray-300'}`}>
+                                    {isSignUp ? 'SIGN UP' : 'SIGN IN'}
+                                </div>
+                            </div>
 
                             <h2 className="text-2xl font-bold mb-2">
-                                {isSignUp ? 'Your Email' : 'Welcome back'}
+                                {isSignUp ? 'Create your account' : 'Welcome back'}
                             </h2>
                             <p className="text-gray-400 text-sm mb-6">
-                                {isSignUp ? 'Where should we send updates?' : 'Enter your email to login'}
+                                {isSignUp ? 'Enter your email to get started' : 'Sign in to access your dashboard'}
                             </p>
 
                             {error && (

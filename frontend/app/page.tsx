@@ -90,12 +90,7 @@ export default function HomePage() {
     ];
 
     return (
-        <div className="min-h-screen text-white relative">
-            {/* Animated Background */}
-            <div className="gradient-bg" />
-            <div className="gradient-orb orb-1" />
-            <div className="gradient-orb orb-2" />
-            <div className="gradient-orb orb-3" />
+        <div className="min-h-screen relative">
 
             <div className="relative z-10">
                 {/* Header/Nav */}
@@ -109,33 +104,33 @@ export default function HomePage() {
                                 <span className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">AskUni</span>
                             </Link>
 
-                            {/* Desktop Nav */}
-                            <nav className="hidden lg:flex items-center gap-8">
+                            {/* Desktop Nav - Right Side */}
+                            <div className="hidden lg:flex items-center gap-6">
                                 <Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors font-medium">Home</Link>
                                 <Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors font-medium">About</Link>
                                 <Link href="/contact" className="text-sm text-gray-400 hover:text-white transition-colors font-medium">Contact</Link>
-                            </nav>
-
-                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-px h-4 bg-white/10"></div>
                                 <Link
                                     href="/login"
-                                    className="hidden sm:block px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white transition-colors"
                                 >
-                                    Log in
+                                    Sign In
                                 </Link>
                                 <Link
                                     href="/login"
-                                    className="hidden sm:block px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-xs sm:text-sm shadow-lg"
+                                    className="px-5 py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-sm shadow-lg hover:scale-105 active:scale-95"
                                 >
                                     Sign Up Free
                                 </Link>
-                                <button
-                                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="lg:hidden p-2 rounded-lg glass-input"
-                                >
-                                    {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                                </button>
                             </div>
+
+                            {/* Mobile Menu Button */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="lg:hidden p-2 rounded-lg glass-input"
+                            >
+                                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            </button>
                         </div>
 
                         {/* Mobile Menu */}
@@ -184,10 +179,11 @@ export default function HomePage() {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
                                 <button
                                     onClick={handleTryFree}
-                                    className="w-full sm:w-auto btn-primary shadow-xl flex items-center justify-center gap-2 group"
+                                    className="btn-primary flex items-center gap-2 group text-lg px-8 py-4"
                                 >
-                                    <span>Try Free (5 Questions)</span>
-                                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
+                                    <Sparkles className="w-5 h-5" />
+                                    <span>Free Trial</span>
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 <Link
                                     href="/login"
@@ -197,9 +193,7 @@ export default function HomePage() {
                                 </Link>
                             </div>
 
-                            <p className="text-xs sm:text-sm text-gray-500 mt-4">
-                                ✨ No credit card required • 5 free questions to start
-                            </p>
+
                         </motion.div>
                     </div>
                 </section>
@@ -268,32 +262,37 @@ export default function HomePage() {
 
                 {/* Benefits */}
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-                    <div className="glass-card p-6 sm:p-8 md:p-12 rounded-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-primary-600/20 blur-[100px] sm:blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="text-center mb-12 sm:mb-16 relative z-10">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-primary-500/20 blur-[100px] rounded-full -z-10" />
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">Why Choose AskUni?</h2>
+                        <p className="text-base sm:text-lg text-gray-400">Built for the modern student experience</p>
+                    </div>
 
-                        <div className="text-center mb-10 sm:mb-16 relative z-10">
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">Why Choose AskUni?</h2>
-                            <p className="text-base sm:text-lg text-gray-400">Built for the modern student experience</p>
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
+                        {benefits.map((benefit, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                viewport={{ once: true }}
+                                className="glass-card p-6 sm:p-8 rounded-3xl hover:bg-white/5 transition-all duration-300 group border border-white/5 hover:border-primary-500/30 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-primary-500/10 blur-2xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-500/20 transition-colors" />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
-                            {benefits.map((benefit, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    viewport={{ once: true }}
-                                    className="flex flex-col items-center text-center group"
-                                >
-                                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-primary-500/20 transition-colors duration-300">
-                                        <benefit.icon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300 group-hover:text-primary-300 transition-colors" />
-                                    </div>
-                                    <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">{benefit.title}</h3>
-                                    <p className="text-sm sm:text-base text-gray-400 leading-relaxed">{benefit.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 relative z-10">
+                                    <benefit.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary-400 group-hover:text-primary-300 transition-colors" />
+                                </div>
+
+                                <h3 className="text-xl sm:text-2xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 group-hover:from-white group-hover:to-white transition-all">
+                                    {benefit.title}
+                                </h3>
+
+                                <p className="text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                                    {benefit.description}
+                                </p>
+                            </motion.div>
+                        ))}
                     </div>
                 </section>
 
@@ -316,9 +315,11 @@ export default function HomePage() {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button
                                     onClick={handleTryFree}
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold text-base sm:text-lg shadow-2xl hover:scale-105 active:scale-95 duration-300"
+                                    className="bg-white text-gray-900 px-10 py-5 rounded-2xl font-bold text-xl hover:bg-gray-100 transition-all flex items-center gap-3 mx-auto shadow-xl shadow-white/10 hover:shadow-2xl hover:scale-105 active:scale-95 duration-200"
                                 >
-                                    Try Free Now <ArrowRight className="w-5 h-5" />
+                                    <Sparkles className="w-6 h-6 text-primary-600" />
+                                    <span>Free Trial</span>
+                                    <ArrowRight className="w-6 h-6" />
                                 </button>
                                 <Link
                                     href="/login"

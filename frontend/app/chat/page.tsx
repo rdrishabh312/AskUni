@@ -292,19 +292,6 @@ export default function ChatPage() {
         return { __html: marked.parse(content) as string };
     };
 
-    if (authLoading) {
-        return (
-            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-orange-50">
-                <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                        <GraduationCap className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-gray-600">Loading AskUni...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-orange-50 relative overflow-hidden">
             {/* Sidebar */}

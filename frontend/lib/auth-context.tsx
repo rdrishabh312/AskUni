@@ -48,6 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         checkSession();
 
+        // Failsafe: stop loading after 3 seconds even if auth hangs
+        const timeout = setTimeout(() => {
+            setIsLoading(false);
+        }, 3000);
+
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
@@ -58,7 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(timeout);
+        };
     }, []);
 
     // Check for existing trial on mount

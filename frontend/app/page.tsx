@@ -79,7 +79,7 @@ export default function HomePage() {
     ];
 
     return (
-        <div className="min-h-screen text-white overflow-x-hidden relative">
+        <div className="min-h-screen text-white relative">
             {/* Animated Background */}
             <div className="gradient-bg" />
             <div className="gradient-orb orb-1" />

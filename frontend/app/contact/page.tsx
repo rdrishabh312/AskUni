@@ -9,7 +9,6 @@ import {
     Linkedin,
     Twitter,
     Instagram,
-    ExternalLink,
     Send
 } from 'lucide-react';
 import { useState } from 'react';
@@ -24,20 +23,20 @@ export default function ContactPage() {
     const socialLinks = [
         {
             name: 'LinkedIn',
-            icon: <Linkedin className="w-5 h-5" />,
+            icon: Linkedin,
             url: 'https://linkedin.com/in/rdrishabh312',
             color: 'hover:text-blue-400'
         },
         {
             name: 'Twitter',
-            icon: <Twitter className="w-5 h-5" />,
+            icon: Twitter,
             url: 'https://twitter.com/rdrishabh312',
             color: 'hover:text-sky-400'
         },
         {
             name: 'Instagram',
-            icon: <Instagram className="w-5 h-5" />,
-            url: 'https://instagram.com/rdrishabh312',
+            icon: Instagram,
+            url: 'https://instagram.com/in/rdrishabh312',
             color: 'hover:text-pink-400'
         }
     ];
@@ -50,177 +49,197 @@ export default function ContactPage() {
     };
 
     return (
-        <div className="min-h-screen">
-            {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50">
-                <div className="glass-card mx-4 mt-4 !rounded-2xl">
-                    <div className="max-w-7xl mx-auto px-6 py-4">
-                        <div className="flex items-center justify-between">
-                            <Link href="/" className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                                    <GraduationCap className="w-6 h-6 text-white" />
-                                </div>
-                                <span className="text-xl font-bold bg-gradient-to-r from-white to-primary-300 bg-clip-text text-transparent">
-                                    AskUni
-                                </span>
-                            </Link>
+        <div className="min-h-screen text-white relative">
+            {/* Animated Background */}
+            <div className="gradient-bg" />
+            <div className="gradient-orb orb-1" />
+            <div className="gradient-orb orb-2" />
 
-                            <div className="flex items-center gap-4">
-                                <Link href="/" className="text-gray-400 hover:text-white transition-colors">Home</Link>
-                                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link>
-                                <Link href="/contact" className="text-white font-medium">Contact</Link>
-                                <Link href="/login" className="btn-primary text-sm py-2 px-6">
-                                    Get Started
-                                </Link>
-                            </div>
+            <div className="relative z-10">
+                {/* Header */}
+                <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 backdrop-blur-xl bg-[#020617]/80">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+                        <div className="flex items-center justify-between">
+                            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/30">
+                                    <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                                </div>
+                                <span className="text-lg sm:text-xl font-bold">AskUni</span>
+                            </Link>
+                            <Link
+                                href="/"
+                                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                <span className="text-sm">Back</span>
+                            </Link>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </header>
 
-            {/* Hero Section */}
-            <section className="pt-40 pb-16 px-6">
-                <div className="max-w-4xl mx-auto text-center">
+                {/* Hero Section */}
+                <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-40 pb-12 sm:pb-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        className="text-center"
                     >
-                        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors">
-                            <ArrowLeft className="w-4 h-4" />
-                            Back to Home
-                        </Link>
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
+                            Get in{' '}
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-accent-400">
+                                Touch
+                            </span>
+                        </h1>
+                        <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
+                            Have questions or feedback? We&apos;d love to hear from you.
+                            Reach out and let&apos;s chat!
+                        </p>
                     </motion.div>
+                </section>
 
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-4xl md:text-6xl font-bold mb-6"
-                    >
-                        Get in <span className="text-primary-400">Touch</span>
-                    </motion.h1>
+                {/* Contact Form and Info */}
+                <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Contact Form */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="glass-card p-6 sm:p-8 rounded-3xl"
+                        >
+                            <h2 className="text-2xl font-bold mb-6">Send a Message</h2>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                                        Your Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="name"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        className="w-full glass-input rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none"
+                                        placeholder="John Doe"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                                        Your Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        required
+                                        className="w-full glass-input rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none"
+                                        placeholder="you@example.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
+                                        Message
+                                    </label>
+                                    <textarea
+                                        id="message"
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                        required
+                                        rows={5}
+                                        className="w-full glass-input rounded-xl py-3 px-4 text-white placeholder-gray-400 focus:outline-none resize-none"
+                                        placeholder="Your message here..."
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full btn-primary flex items-center justify-center gap-2"
+                                >
+                                    <Send className="w-5 h-5" />
+                                    Send Message
+                                </button>
+                            </form>
+                        </motion.div>
 
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-xl text-gray-400 max-w-2xl mx-auto"
-                    >
-                        Have questions, suggestions, or want to collaborate? I&apos;d love to hear from you!
-                    </motion.p>
-                </div>
-            </section>
-
-            {/* Contact Content */}
-            <section className="py-16 px-6">
-                <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-                    {/* Contact Form */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        viewport={{ once: true }}
-                        className="glass-card p-8"
-                    >
-                        <h2 className="text-2xl font-bold mb-6">Send a Message</h2>
-
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-2">Your Name</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="John Doe"
-                                    required
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-all"
-                                />
+                        {/* Contact Info */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Email */}
+                            <div className="glass-card p-6 sm:p-8 rounded-3xl">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500/10 to-accent-500/10 border border-primary-500/20 flex items-center justify-center">
+                                        <Mail className="w-6 h-6 text-primary-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Email</h3>
+                                        <p className="text-sm text-gray-400">Drop us a line anytime</p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="mailto:rdrishabh312@zohomail.in"
+                                    className="text-primary-400 hover:text-primary-300 transition-colors text-sm"
+                                >
+                                    rdrishabh312@zohomail.in
+                                </a>
                             </div>
 
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-2">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="you@example.com"
-                                    required
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-all"
-                                />
+                            {/* Social Links */}
+                            <div className="glass-card p-6 sm:p-8 rounded-3xl">
+                                <h3 className="text-lg font-bold mb-6 text-white">Connect With Us</h3>
+                                <div className="space-y-4">
+                                    {socialLinks.map((link, i) => (
+                                        <a
+                                            key={i}
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group ${link.color}`}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <link.icon className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-gray-300 group-hover:text-white transition-colors font-medium">
+                                                {link.name}
+                                            </span>
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-2">Message</label>
-                                <textarea
-                                    value={formData.message}
-                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                    placeholder="Your message..."
-                                    required
-                                    rows={5}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-all resize-none"
-                                />
+                            {/* Quick Info */}
+                            <div className="glass-card p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-primary-600/10 to-accent-600/10 border-primary-500/20">
+                                <h3 className="text-lg font-bold mb-3 text-white">Quick Response</h3>
+                                <p className="text-sm text-gray-300 leading-relaxed">
+                                    We typically respond within 24-48 hours. For urgent matters,
+                                    please reach out via email directly.
+                                </p>
                             </div>
+                        </motion.div>
+                    </div>
+                </section>
 
-                            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-                                <Send className="w-5 h-5" />
-                                Send Message
-                            </button>
-                        </form>
-                    </motion.div>
-
-                    {/* Contact Info */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        viewport={{ once: true }}
-                        className="space-y-6"
-                    >
-                        {/* Email Card */}
-                        <div className="glass-card p-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <Mail className="w-5 h-5 text-primary-400" />
-                                Email
-                            </h3>
-                            <a
-                                href="mailto:rdrishabh312@zohomail.in"
-                                className="text-gray-300 hover:text-primary-400 transition-colors flex items-center gap-2"
-                            >
-                                rdrishabh312@zohomail.in
-                                <ExternalLink className="w-4 h-4" />
-                            </a>
-                        </div>
-
-                        {/* Social Links Card */}
-                        <div className="glass-card p-6">
-                            <h3 className="text-lg font-semibold mb-4">Connect with Me</h3>
-                            <div className="flex flex-col gap-3">
-                                {socialLinks.map((social) => (
-                                    <a
-                                        key={social.name}
-                                        href={social.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 transition-all hover:bg-white/10 hover:border-primary-500/30 ${social.color}`}
-                                    >
-                                        {social.icon}
-                                        <span>{social.name}</span>
-                                    </a>
-                                ))}
+                {/* Footer */}
+                <footer className="border-t border-white/5 bg-[#020617]/50 backdrop-blur-xl mt-12 sm:mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                                    <GraduationCap className="w-5 h-5 text-white" />
+                                </div>
+                                <span className="font-bold text-lg">AskUni</span>
                             </div>
-                        </div>
-
-                        {/* Response Time */}
-                        <div className="glass-card p-6 bg-gradient-to-br from-primary-500/10 to-accent-500/10">
-                            <h3 className="text-lg font-semibold mb-2">Quick Response</h3>
-                            <p className="text-gray-400 text-sm">
-                                I typically respond within 24-48 hours. For urgent matters, please reach out via social media.
+                            <p className="text-gray-500 text-sm">
+                                © 2025 AskUni. By <span className="text-primary-400 font-medium">rdrishabh312</span>
                             </p>
                         </div>
-                    </motion.div>
-                </div>
-            </section>
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 }

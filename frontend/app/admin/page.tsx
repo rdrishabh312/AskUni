@@ -6,7 +6,6 @@ import {
     Server,
     Cpu,
     Activity,
-    Settings,
     RefreshCw,
     Play,
     ArrowLeft,
@@ -204,20 +203,25 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen p-6">
-            <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen text-white relative">
+            {/* Animated Background */}
+            <div className="gradient-bg" />
+            <div className="gradient-orb orb-1" />
+            <div className="gradient-orb orb-2" />
+
+            <div className="relative z-10 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <Link href="/chat" className="p-2 rounded-lg hover:bg-white/10 transition-colors">
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                                <Settings className="w-6 h-6 text-white" />
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/30">
+                                <Shield className="w-7 h-7 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold">Admin Panel</h1>
+                                <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
                                 <p className="text-gray-400 text-sm">Developer: {user.email}</p>
                             </div>
                         </div>
@@ -235,23 +239,26 @@ export default function AdminPage() {
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6">
-                    {[
-                        { id: 'overview', label: 'Overview', icon: Activity },
-                        { id: 'users', label: 'Users', icon: Users },
-                        { id: 'ai', label: 'AI Instructions', icon: FileText },
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${activeTab === tab.id
-                                ? 'bg-primary-500 text-white'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                }`}
-                        >
-                            <tab.icon className="w-4 h-4" />
-                            {tab.label}
-                        </button>
-                    ))}
+                    {(['overview', 'users', 'ai'] as const).map(tabId => {
+                        const tab = {
+                            overview: { label: 'Overview', icon: Activity },
+                            users: { label: 'Users', icon: Users },
+                            ai: { label: 'AI Instructions', icon: FileText },
+                        }[tabId];
+                        return (
+                            <button
+                                key={tabId}
+                                onClick={() => setActiveTab(tabId)}
+                                className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${activeTab === tabId
+                                    ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-lg shadow-primary-500/30'
+                                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                                    }`}
+                            >
+                                <tab.icon className="w-4 h-4" />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Overview Tab */}

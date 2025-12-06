@@ -255,13 +255,17 @@ export default function ChatPage() {
                                     m.id === assistantId ? { ...m, sources } : m
                                 ));
                             } else if (data.type === 'content') {
-                                accumulatedContent += data.data;
-                                // Update message with each chunk for real-time streaming
+                                // Add content piece by piece for smooth streaming
+                                const newContent = data.data;
+                                accumulatedContent += newContent;
+
+                                // Update message immediately for real-time streaming
                                 setMessages(prev => prev.map(m =>
                                     m.id === assistantId ? { ...m, content: accumulatedContent } : m
                                 ));
+
                                 // Scroll to bottom as content streams in
-                                scrollToBottom();
+                                setTimeout(() => scrollToBottom(), 10);
                             } else if (data.type === 'done') {
                                 setMessages(prev => prev.map(m =>
                                     m.id === assistantId ? { ...m, isStreaming: false } : m
@@ -290,6 +294,24 @@ export default function ChatPage() {
             e.preventDefault();
             sendMessage();
         }
+    };
+
+    const loadConversation = (conversation: Conversation) => {
+        // Save current conversation if it has messages
+        if (messages.length > 0 && !conversations.find(c => c.id === conversation.id)) {
+            const currentConv: Conversation = {
+                id: Date.now().toString(),
+                title: messages[0]?.content.slice(0, 30) + '...' || 'New Chat',
+                timestamp: new Date(),
+                messages: messages,
+            };
+            setConversations(prev => [currentConv, ...prev]);
+        }
+
+        // Load the selected conversation
+        setMessages(conversation.messages);
+        setSidebarOpen(false);
+        setTimeout(() => scrollToBottom(), 100);
     };
 
     const startNewChat = () => {
@@ -382,10 +404,16 @@ export default function ChatPage() {
                                     conversations.map(conv => (
                                         <button
                                             key={conv.id}
+                                            onClick={() => loadConversation(conv)}
                                             className="w-full text-left p-3 rounded-xl hover:bg-white/5 transition-colors flex items-center gap-3 text-sm text-gray-300 mb-1"
                                         >
                                             <MessageSquare className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                            <span className="truncate">{conv.title}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="truncate">{conv.title}</p>
+                                                <p className="text-xs text-gray-600 mt-0.5">
+                                                    {conv.messages.length} messages
+                                                </p>
+                                            </div>
                                         </button>
                                     ))
                                 ) : (

@@ -10,6 +10,10 @@ import {
     LogOut,
     User,
     Settings,
+    Trash2,
+    ThumbsUp,
+    ThumbsDown,
+    ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,6 +33,7 @@ interface Message {
     sources?: Source[];
     isStreaming?: boolean;
     timestamp: Date;
+    feedback?: 'up' | 'down' | null;
 }
 
 interface Conversation {
@@ -58,6 +63,7 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+    const [displayedContent, setDisplayedContent] = useState<{ [key: string]: string }>({});
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -66,6 +72,16 @@ export default function ChatPage() {
     const remainingMessages = hasMessageLimit ? TRIAL_MESSAGE_LIMIT - conversations.length : Infinity;
 
 
+
+    // Auto-hide sidebar after 3 seconds
+    useEffect(() => {
+        if (sidebarOpen) {
+            const timer = setTimeout(() => {
+                setSidebarOpen(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [sidebarOpen]);
 
     useEffect(() => {
         if (!authLoading && !user && !isTrial) {
@@ -136,6 +152,34 @@ export default function ChatPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Typewriter effect for streaming messages
+    useEffect(() => {
+        const streamingMessages = messages.filter(m => m.role === 'assistant' && m.isStreaming && m.content);
+
+        streamingMessages.forEach(msg => {
+            const targetContent = msg.content;
+            const currentDisplayed = displayedContent[msg.id] || '';
+
+            if (currentDisplayed.length < targetContent.length) {
+                const timer = setTimeout(() => {
+                    const charsToAdd = Math.min(3, targetContent.length - currentDisplayed.length); // Add 3 chars at a time for smoother effect
+                    setDisplayedContent(prev => ({
+                        ...prev,
+                        [msg.id]: targetContent.slice(0, currentDisplayed.length + charsToAdd)
+                    }));
+                }, 10); // Very fast interval for smooth typing
+
+                return () => clearTimeout(timer);
+            } else if (!msg.isStreaming && currentDisplayed !== targetContent) {
+                // Ensure final content is complete when streaming stops
+                setDisplayedContent(prev => ({
+                    ...prev,
+                    [msg.id]: targetContent
+                }));
+            }
+        });
+    }, [messages, displayedContent]);
 
     const sendMessage = async (text?: string) => {
         const messageText = text || inputValue.trim();
@@ -233,14 +277,14 @@ export default function ChatPage() {
             console.error('Chat error:', error);
             setMessages(prev => prev.map(m =>
                 m.id === assistantId
-                    ? { ...m, content: 'Sorry, I encountered an error. Please make sure the backend server is running on port 8000.', isStreaming: false }
+                    ? { ...m, content: '⚠️ **Server currently down**\n\nOur AI service is temporarily unavailable. Please check back in a few minutes.\n\nIf the issue persists, contact support.', isStreaming: false }
                     : m
             ));
         } finally {
             setIsLoading(false);
+            setInputValue('');
         }
     };
-
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -315,14 +359,25 @@ export default function ChatPage() {
                     <p className="text-xs text-gray-500 font-medium px-3 py-2 uppercase tracking-wider">Recent Chats</p>
                     {conversations.length > 0 ? (
                         conversations.map(conv => (
-                            <button
-                                key={conv.id}
-                                onClick={() => loadConversation(conv)}
-                                className="w-full text-left p-3 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors text-sm truncate group border border-transparent hover:border-white/5"
-                            >
-                                <span className="block truncate opacity-90">{conv.title}</span>
-                                <span className="text-xs text-gray-500 mt-1 block">{new Date(conv.timestamp).toLocaleDateString()}</span>
-                            </button>
+                            <div key={conv.id} className="group/item relative">
+                                <button
+                                    onClick={() => loadConversation(conv)}
+                                    className="w-full text-left p-3 pr-10 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors text-sm truncate border border-transparent hover:border-white/5"
+                                >
+                                    <span className="block truncate opacity-90">{conv.title}</span>
+                                    <span className="text-xs text-gray-500 mt-1 block">{new Date(conv.timestamp).toLocaleDateString()}</span>
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConversations(prev => prev.filter(c => c.id !== conv.id));
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg opacity-0 group-hover/item:opacity-100 hover:bg-red-500/10 text-gray-500 hover:text-red-400 transition-all"
+                                    title="Delete chat"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         ))
                     ) : (
                         <div className="text-center py-8 text-gray-600 text-xs">No chat history yet</div>
@@ -409,7 +464,10 @@ export default function ChatPage() {
                 {/* Mobile Header */}
                 <header className="md:hidden p-4 border-b border-white/5 flex items-center gap-4 bg-[#020617]/80 backdrop-blur z-30 sticky top-0">
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu className="w-6 h-6" /></button>
-                    <span className="font-bold text-lg">AskUni</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">AskUni</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-300 border border-primary-500/30">AI</span>
+                    </div>
                     {isTrial && <span className="ml-auto text-xs px-2 py-1 rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">{remainingMessages} left</span>}
                 </header>
 
@@ -468,16 +526,77 @@ export default function ChatPage() {
                                             <p className="text-base leading-relaxed">{message.content}</p>
                                         ) : (
                                             <div className="space-y-4">
-                                                <div
-                                                    className="prose prose-invert prose-p:text-gray-300 prose-headings:text-gray-100 prose-strong:text-white prose-li:text-gray-300 max-w-none leading-relaxed"
-                                                    dangerouslySetInnerHTML={renderMarkdown(message.content || '')}
-                                                />
-                                                {/* Streaming Indicator */}
                                                 {message.isStreaming && !message.content && (
                                                     <div className="flex items-center gap-1 h-6">
                                                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
                                                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" />
                                                         <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" />
+                                                    </div>
+                                                )}
+
+                                                {message.content && (
+                                                    <div
+                                                        className="prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none leading-relaxed text-[15px]"
+                                                        dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
+                                                    />
+                                                )}
+
+                                                {/* Sources */}
+                                                {message.sources && message.sources.length > 0 && !message.isStreaming && (
+                                                    <div className="border-t border-white/10 pt-4 mt-4">
+                                                        <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Sources</p>
+                                                        <div className="space-y-2">
+                                                            {message.sources.map((source, idx) => (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={source.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-start gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-500/30 transition-all group"
+                                                                >
+                                                                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-primary-400 mt-0.5 shrink-0" />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-sm font-medium text-gray-200 group-hover:text-white truncate">{source.title}</p>
+                                                                        <p className="text-xs text-gray-500 line-clamp-2">{source.snippet}</p>
+                                                                    </div>
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Feedback Buttons */}
+                                                {!message.isStreaming && message.content && (
+                                                    <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-4">
+                                                        <p className="text-xs text-gray-500 mr-2">Was this helpful?</p>
+                                                        <button
+                                                            onClick={() => {
+                                                                setMessages(prev => prev.map(m =>
+                                                                    m.id === message.id ? { ...m, feedback: m.feedback === 'up' ? null : 'up' } : m
+                                                                ));
+                                                            }}
+                                                            className={`p-1.5 rounded-lg transition-all ${message.feedback === 'up'
+                                                                ? 'bg-green-500/20 text-green-400'
+                                                                : 'text-gray-500 hover:text-green-400 hover:bg-green-500/10'
+                                                                }`}
+                                                            title="Helpful"
+                                                        >
+                                                            <ThumbsUp className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setMessages(prev => prev.map(m =>
+                                                                    m.id === message.id ? { ...m, feedback: m.feedback === 'down' ? null : 'down' } : m
+                                                                ));
+                                                            }}
+                                                            className={`p-1.5 rounded-lg transition-all ${message.feedback === 'down'
+                                                                ? 'bg-red-500/20 text-red-400'
+                                                                : 'text-gray-500 hover:text-red-400 hover:bg-red-500/10'
+                                                                }`}
+                                                            title="Not helpful"
+                                                        >
+                                                            <ThumbsDown className="w-4 h-4" />
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
@@ -507,7 +626,7 @@ export default function ChatPage() {
                                 onKeyDown={handleKeyPress}
                                 placeholder={isTrial && !user ? `Ask a question (${remainingMessages} free left)...` : "Message AskUni..."}
                                 rows={1}
-                                className="w-full bg-transparent border-0 focus:ring-0 resize-none py-3.5 pl-5 pr-14 text-white placeholder-gray-500 min-h-[56px] max-h-[200px]"
+                                className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3.5 pl-5 pr-14 text-white placeholder-gray-500 min-h-[56px] max-h-[200px]"
                                 style={{ height: 'auto', minHeight: '56px' }}
                             />
                             <button

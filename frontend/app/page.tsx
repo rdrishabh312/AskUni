@@ -82,14 +82,14 @@ export default function HomePage() {
 
             <div className="relative z-10">
                 {/* Header/Nav */}
-                <header className="border-b border-white/5 backdrop-blur-sm">
+                <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-xl bg-[#0a0a0a]/80">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/50">
                                     <GraduationCap className="w-6 h-6 text-white" />
                                 </div>
-                                <span className="text-xl font-bold">AskUni</span>
+                                <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">AskUni</span>
                             </div>
                             <div className="flex items-center gap-4">
                                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
@@ -116,7 +116,7 @@ export default function HomePage() {
                 </header>
 
                 {/* Hero Section */}
-                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40 pt-40">
                     <div className="text-center">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -166,13 +166,13 @@ export default function HomePage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
                                 viewport={{ once: true }}
-                                className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+                                className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02] border border-white/10 hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 group backdrop-blur-sm"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                    <feature.icon className="w-6 h-6 text-white" />
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-primary-500/30">
+                                    <feature.icon className="w-7 h-7 text-white" />
                                 </div>
-                                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                                <p className="text-gray-400">{feature.description}</p>
+                                <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">{feature.title}</h3>
+                                <p className="text-gray-400 leading-relaxed">{feature.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -192,11 +192,13 @@ export default function HomePage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
                                 viewport={{ once: true }}
-                                className="p-6 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-primary-500/30 transition-all"
+                                className="p-7 rounded-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/10 hover:border-accent-500/50 hover:shadow-2xl hover:shadow-accent-500/10 transition-all duration-300 backdrop-blur-sm group"
                             >
-                                <benefit.icon className="w-10 h-10 text-primary-400 mb-4" />
-                                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-                                <p className="text-gray-400">{benefit.description}</p>
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400/20 to-accent-400/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <benefit.icon className="w-6 h-6 text-primary-400" />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">{benefit.title}</h3>
+                                <p className="text-gray-400 leading-relaxed">{benefit.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -204,8 +206,8 @@ export default function HomePage() {
 
                 {/* CTA Section */}
                 <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-                    <div className="relative rounded-3xl bg-gradient-to-br from-primary-600/20 to-accent-600/20 border border-primary-500/30 p-12 text-center overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-accent-500/10 blur-3xl" />
+                    <div className="relative rounded-3xl bg-gradient-to-br from-primary-600/30 to-accent-600/30 border border-primary-500/50 p-12 md:p-16 text-center overflow-hidden backdrop-blur-xl shadow-2xl shadow-primary-500/20">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-accent-500/20 blur-3xl" />
                         <div className="relative z-10">
                             <Sparkles className="w-12 h-12 text-primary-400 mx-auto mb-6" />
                             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -216,7 +218,7 @@ export default function HomePage() {
                             </p>
                             <Link
                                 href="/chat"
-                                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black hover:bg-gray-100 transition-colors font-semibold text-lg shadow-xl"
+                                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-lg shadow-2xl hover:shadow-white/30 hover:scale-105 duration-300"
                             >
                                 Start Free Trial <ArrowRight className="w-5 h-5" />
                             </Link>
@@ -243,9 +245,6 @@ export default function HomePage() {
                                 </Link>
                                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
                                     Contact
-                                </Link>
-                                <Link href="/admin" className="text-gray-400 hover:text-white transition-colors text-sm">
-                                    Admin
                                 </Link>
                             </div>
                         </div>

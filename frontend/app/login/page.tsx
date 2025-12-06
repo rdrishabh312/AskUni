@@ -12,24 +12,34 @@ import {
     Lock,
     Eye,
     EyeOff,
-    Clock,
+    User,
+    Building,
+    BookOpen,
     AlertCircle,
     Check,
     Loader2
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
-type Step = 'welcome' | 'email' | 'password' | 'complete';
+type Step = 'welcome' | 'details' | 'email' | 'password' | 'complete';
 
 export default function LoginPage() {
     const router = useRouter();
-    const { signInWithGoogle, signInWithEmail, signUpWithEmail, startTrial, user, isLoading: authLoading } = useAuth();
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, isLoading: authLoading } = useAuth();
 
     const [step, setStep] = useState<Step>('welcome');
     const [isSignUp, setIsSignUp] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+
+    // Form Data
+    const [formData, setFormData] = useState({
+        name: '',
+        college: '',
+        semester: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
+
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -47,10 +57,15 @@ export default function LoginPage() {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             if (params.get('reason') === 'limit') {
-                setError('You\'ve used all your free messages. Sign up to continue!');
+                setError('You&apos;ve used all your free messages. Sign up (it&apos;s free!) to continue.');
             }
         }
     }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
+    };
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
@@ -64,32 +79,34 @@ export default function LoginPage() {
         }
     };
 
-    const handleTryFree = () => {
-        startTrial();
-        router.push('/chat');
+    const handleDetailsContinue = () => {
+        if (!formData.name.trim() || !formData.college.trim() || !formData.semester.trim()) {
+            setError('Please fill in all fields');
+            return;
+        }
+        setStep('email');
     };
 
     const handleEmailContinue = () => {
-        if (!email.trim()) {
+        if (!formData.email.trim()) {
             setError('Please enter your email address');
             return;
         }
-        if (!email.includes('@') || !email.includes('.')) {
+        if (!formData.email.includes('@') || !formData.email.includes('.')) {
             setError('Please enter a valid email address');
             return;
         }
-        setError('');
         setStep('password');
     };
 
     const handlePasswordContinue = async () => {
-        if (password.length < 6) {
+        if (formData.password.length < 6) {
             setError('Password must be at least 6 characters');
             return;
         }
 
         if (isSignUp) {
-            if (password !== confirmPassword) {
+            if (formData.password !== formData.confirmPassword) {
                 setError('Passwords do not match');
                 return;
             }
@@ -97,7 +114,16 @@ export default function LoginPage() {
             setIsLoading(true);
             setError('');
             try {
-                const { error: signUpError } = await signUpWithEmail(email, password);
+                const { error: signUpError } = await signUpWithEmail(
+                    formData.email,
+                    formData.password,
+                    {
+                        name: formData.name,
+                        college: formData.college,
+                        semester: formData.semester
+                    }
+                );
+
                 if (signUpError) {
                     if (signUpError.message.includes('already registered')) {
                         setError('This email is already registered. Please login instead.');
@@ -105,7 +131,7 @@ export default function LoginPage() {
                         setError(signUpError.message);
                     }
                 } else {
-                    setSuccessMessage('Account created! Check your email to verify, or login now.');
+                    setSuccessMessage('Account created! Check your email to verify.');
                     setStep('complete');
                 }
             } catch {
@@ -118,7 +144,7 @@ export default function LoginPage() {
             setIsLoading(true);
             setError('');
             try {
-                const { error: signInError } = await signInWithEmail(email, password);
+                const { error: signInError } = await signInWithEmail(formData.email, formData.password);
                 if (signInError) {
                     if (signInError.message.includes('Invalid login')) {
                         setError('Invalid email or password. Please try again.');
@@ -140,9 +166,17 @@ export default function LoginPage() {
         setError('');
         setSuccessMessage('');
         switch (step) {
-            case 'email':
+            case 'details':
                 setStep('welcome');
                 setIsSignUp(false);
+                break;
+            case 'email':
+                if (isSignUp) {
+                    setStep('details');
+                } else {
+                    setStep('welcome');
+                    setIsSignUp(false);
+                }
                 break;
             case 'password':
                 setStep('email');
@@ -150,9 +184,14 @@ export default function LoginPage() {
             case 'complete':
                 setStep('welcome');
                 setIsSignUp(false);
-                setEmail('');
-                setPassword('');
-                setConfirmPassword('');
+                setFormData({
+                    name: '',
+                    college: '',
+                    semester: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: ''
+                });
                 break;
             default:
                 setStep('welcome');
@@ -164,16 +203,19 @@ export default function LoginPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary-500 mx-auto mb-4" />
-                    <p className="text-gray-400">Loading...</p>
+                    <Loader2 className="w-10 h-10 animate-spin text-primary-500 mx-auto mb-4" />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden relative">
+            {/* Background Effects */}
+            <div className="gradient-orb orb-1" />
+            <div className="gradient-orb orb-2" />
+
+            <div className="w-full max-w-md relative z-10 my-10">
                 <AnimatePresence mode="wait">
                     {/* Welcome Step */}
                     {step === 'welcome' && (
@@ -182,43 +224,49 @@ export default function LoginPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="glass-card p-8"
+                            className="glass-card p-8 md:p-10"
                         >
                             {/* Logo */}
                             <div className="text-center mb-8">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/25">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/30">
                                     <GraduationCap className="w-9 h-9 text-white" />
                                 </div>
-                                <h1 className="text-2xl font-bold mb-2">Welcome to AskUni</h1>
-                                <p className="text-gray-400 text-sm">Your AI-powered university assistant</p>
+                                <h1 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">AskUni</h1>
+                                <p className="text-gray-400">Your AI-powered university assistant</p>
                             </div>
 
                             {/* Error */}
                             {error && (
-                                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm flex items-center gap-3">
+                                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
                                     <span>{error}</span>
                                 </div>
                             )}
 
-                            {/* Try Free */}
+                            {/* Sign Up Free */}
                             <button
-                                onClick={handleTryFree}
-                                className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-primary-500/20 to-accent-500/20 border border-primary-500/30 hover:border-primary-500/50 transition-all flex items-center justify-center gap-3 group"
+                                onClick={() => { setStep('details'); setIsSignUp(true); setError(''); }}
+                                className="w-full mb-4 p-4 rounded-xl bg-gradient-to-r from-primary-600 to-accent-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 group shadow-lg shadow-primary-600/20"
                             >
-                                <Clock className="w-5 h-5 text-primary-400 group-hover:scale-110 transition-transform" />
-                                <span className="font-medium">Try Free for 10 Minutes</span>
+                                <span className="font-bold text-lg">Sign Up Free</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
 
-                            <p className="text-center text-xs text-gray-500 mb-6">5 messages • No signup required</p>
+                            {/* Login */}
+                            <button
+                                onClick={() => { setStep('email'); setIsSignUp(false); setError(''); }}
+                                className="w-full mb-6 p-4 rounded-xl glass-input hover:bg-white/10 transition-all font-medium text-gray-300 hover:text-white"
+                            >
+                                Log in
+                            </button>
 
                             {/* Divider */}
-                            <div className="relative my-6">
+                            <div className="relative my-8">
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-white/10"></div>
                                 </div>
                                 <div className="relative flex justify-center">
-                                    <span className="px-4 bg-[#171717] text-gray-500 text-sm">or continue with</span>
+                                    <span className="px-4 bg-[#020617]/50 backdrop-blur-sm text-gray-500 text-sm rounded-full">or continue with</span>
                                 </div>
                             </div>
 
@@ -226,7 +274,7 @@ export default function LoginPage() {
                             <button
                                 onClick={handleGoogleSignIn}
                                 disabled={isLoading}
-                                className="w-full mb-3 p-3.5 rounded-xl bg-white text-gray-900 font-medium hover:bg-gray-100 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                className="w-full p-3.5 rounded-xl bg-white text-gray-900 font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg transform active:scale-95 duration-200"
                             >
                                 {isLoading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -238,32 +286,92 @@ export default function LoginPage() {
                                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                     </svg>
                                 )}
-                                Continue with Google
+                                Google
                             </button>
-
-                            {/* Email */}
-                            <button
-                                onClick={() => { setStep('email'); setIsSignUp(false); setError(''); }}
-                                className="w-full p-3.5 rounded-xl bg-white/10 hover:bg-white/15 transition-all flex items-center justify-center gap-3"
-                            >
-                                <Mail className="w-5 h-5" />
-                                Continue with Email
-                            </button>
-
-                            {/* Signup Link */}
-                            <p className="text-center text-gray-400 text-sm mt-6">
-                                Don&apos;t have an account?{' '}
-                                <button
-                                    onClick={() => { setStep('email'); setIsSignUp(true); setError(''); }}
-                                    className="text-primary-400 hover:underline font-medium"
-                                >
-                                    Sign up
-                                </button>
-                            </p>
                         </motion.div>
                     )}
 
-                    {/* Email Step */}
+                    {/* Step 1: Details (Sign Up Only) */}
+                    {step === 'details' && (
+                        <motion.div
+                            key="details"
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            className="glass-card p-8"
+                        >
+                            <button onClick={goBack} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors">
+                                <ArrowLeft className="w-4 h-4" />
+                                Back
+                            </button>
+
+                            <h2 className="text-2xl font-bold mb-2">Tell us about you</h2>
+                            <p className="text-gray-400 text-sm mb-6">We&apos;ll personalize your experience</p>
+
+                            {error && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-gray-300 mb-2">Full Name</label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                        <input
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            placeholder="John Doe"
+                                            className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-gray-300 mb-2">College Name</label>
+                                    <div className="relative">
+                                        <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                        <input
+                                            name="college"
+                                            value={formData.college}
+                                            onChange={handleChange}
+                                            placeholder="University of Technology"
+                                            className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-gray-300 mb-2">Current Semester</label>
+                                    <div className="relative">
+                                        <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                        <input
+                                            name="semester"
+                                            value={formData.semester}
+                                            onChange={handleChange}
+                                            placeholder="e.g. 4th Semester"
+                                            className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
+                                            onKeyDown={(e) => e.key === 'Enter' && handleDetailsContinue()}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleDetailsContinue}
+                                className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
+                            >
+                                Continue
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {/* Step 2: Email */}
                     {step === 'email' && (
                         <motion.div
                             key="email"
@@ -277,10 +385,12 @@ export default function LoginPage() {
                                 Back
                             </button>
 
-                            <h2 className="text-xl font-bold mb-2">
-                                {isSignUp ? 'Create your account' : 'Welcome back'}
+                            <h2 className="text-2xl font-bold mb-2">
+                                {isSignUp ? 'Your Email' : 'Welcome back'}
                             </h2>
-                            <p className="text-gray-400 text-sm mb-6">Enter your email to continue</p>
+                            <p className="text-gray-400 text-sm mb-6">
+                                {isSignUp ? 'Where should we send updates?' : 'Enter your email to login'}
+                            </p>
 
                             {error && (
                                 <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
@@ -289,43 +399,34 @@ export default function LoginPage() {
                                 </div>
                             )}
 
-                            <div className="mb-4">
+                            <div>
                                 <label className="block text-sm text-gray-300 mb-2">Email address</label>
                                 <div className="relative">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                     <input
                                         type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
                                         onKeyDown={(e) => e.key === 'Enter' && handleEmailContinue()}
                                         placeholder="you@university.edu"
                                         autoFocus
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
+                                        className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
                                     />
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleEmailContinue}
-                                className="w-full btn-primary flex items-center justify-center gap-2"
+                                className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
                             >
                                 Continue
                                 <ArrowRight className="w-4 h-4" />
                             </button>
-
-                            <p className="text-center text-gray-400 text-sm mt-6">
-                                {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-                                <button
-                                    onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
-                                    className="text-primary-400 hover:underline font-medium"
-                                >
-                                    {isSignUp ? 'Log in' : 'Sign up'}
-                                </button>
-                            </p>
                         </motion.div>
                     )}
 
-                    {/* Password Step */}
+                    {/* Step 3: Password */}
                     {step === 'password' && (
                         <motion.div
                             key="password"
@@ -339,10 +440,10 @@ export default function LoginPage() {
                                 Back
                             </button>
 
-                            <h2 className="text-xl font-bold mb-2">
-                                {isSignUp ? 'Create a password' : 'Enter your password'}
+                            <h2 className="text-2xl font-bold mb-2">
+                                {isSignUp ? 'Secure your account' : 'Enter password'}
                             </h2>
-                            <p className="text-gray-400 text-sm mb-6">{email}</p>
+                            <p className="text-gray-400 text-sm mb-6">{formData.email}</p>
 
                             {error && (
                                 <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
@@ -351,50 +452,54 @@ export default function LoginPage() {
                                 </div>
                             )}
 
-                            <div className="mb-4">
-                                <label className="block text-sm text-gray-300 mb-2">Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && !isSignUp && handlePasswordContinue()}
-                                        placeholder="••••••••"
-                                        autoFocus
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {isSignUp && (
-                                <div className="mb-4">
-                                    <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-gray-300 mb-2">Password</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                         <input
+                                            name="password"
                                             type={showPassword ? 'text' : 'password'}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handlePasswordContinue()}
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            onKeyDown={(e) => e.key === 'Enter' && !isSignUp && handlePasswordContinue()}
                                             placeholder="••••••••"
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
+                                            autoFocus
+                                            className="w-full glass-input rounded-xl py-3.5 pl-12 pr-12 text-white placeholder-gray-500 focus:outline-none"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
                                     </div>
                                 </div>
-                            )}
+
+                                {isSignUp && (
+                                    <div>
+                                        <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                            <input
+                                                name="confirmPassword"
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={formData.confirmPassword}
+                                                onChange={handleChange}
+                                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordContinue()}
+                                                placeholder="••••••••"
+                                                className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             <button
                                 onClick={handlePasswordContinue}
                                 disabled={isLoading}
-                                className="w-full btn-primary flex items-center justify-center gap-2"
+                                className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
                             >
                                 {isLoading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -405,14 +510,6 @@ export default function LoginPage() {
                                     </>
                                 )}
                             </button>
-
-                            {!isSignUp && (
-                                <p className="text-center text-gray-400 text-sm mt-4">
-                                    <button className="text-primary-400 hover:underline">
-                                        Forgot password?
-                                    </button>
-                                </p>
-                            )}
                         </motion.div>
                     )}
 
@@ -424,29 +521,22 @@ export default function LoginPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="glass-card p-8 text-center"
                         >
-                            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                                <Check className="w-8 h-8 text-green-400" />
+                            <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20">
+                                <Check className="w-10 h-10 text-green-400" />
                             </div>
 
-                            <h2 className="text-xl font-bold mb-2">Account Created!</h2>
-                            <p className="text-gray-400 text-sm mb-6">
-                                {successMessage || 'You can now start chatting!'}
+                            <h2 className="text-2xl font-bold mb-2">Welcome Aboard!</h2>
+                            <p className="text-gray-400 mb-8">
+                                {successMessage || 'Your account has been created successfully.'}
                             </p>
 
                             <button
                                 onClick={() => { setStep('password'); setIsSignUp(false); }}
-                                className="btn-primary inline-flex items-center gap-2 mb-3"
+                                className="w-full btn-primary inline-flex items-center justify-center gap-2"
                             >
                                 Login Now
                                 <ArrowRight className="w-4 h-4" />
                             </button>
-
-                            <p className="text-gray-500 text-sm">
-                                or{' '}
-                                <Link href="/chat" className="text-primary-400 hover:underline">
-                                    continue as guest
-                                </Link>
-                            </p>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -456,10 +546,11 @@ export default function LoginPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-center mt-6"
+                    className="text-center mt-8"
                 >
-                    <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
-                        ← Back to homepage
+                    <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors flex items-center justify-center gap-2 group">
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        Back to homepage
                     </Link>
                 </motion.div>
             </div>

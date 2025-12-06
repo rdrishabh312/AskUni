@@ -17,7 +17,7 @@ interface AuthContextType {
     trialTimeLeft: number;
     signInWithGoogle: () => Promise<void>;
     signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-    signUpWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+    signUpWithEmail: (email: string, password: string, userData?: { name: string; college: string; semester: string }) => Promise<{ error: AuthError | null }>;
     signOut: () => Promise<void>;
     startTrial: () => void;
     endTrial: () => void;
@@ -120,12 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
     };
 
-    const signUpWithEmail = async (email: string, password: string) => {
+    const signUpWithEmail = async (email: string, password: string, userData?: { name: string; college: string; semester: string }) => {
         const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
+                data: userData,
             },
         });
         return { error };

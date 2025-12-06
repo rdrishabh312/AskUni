@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: askuni-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.2
+      - FRONTEND_URL=http://localhost:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # Frontend Next.js Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: askuni-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=your-secret-key-change-in-production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    name: askuni-network

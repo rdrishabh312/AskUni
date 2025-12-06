@@ -5,22 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     GraduationCap,
     Sparkles,
-    Plus,
-    MessageSquare,
-    LogOut,
-    ExternalLink,
-    Menu,
-    X,
-    Clock,
     ArrowUp,
-    Copy,
-    Check,
-    RefreshCw,
+    Menu,
+    LogOut,
+    MessageSquare,
+    Clock,
     Zap,
-    BookOpen,
-    Users,
-    Calendar,
-    Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,8 +39,15 @@ interface Conversation {
     messages: Message[];
 }
 
-// Message limits
 const TRIAL_MESSAGE_LIMIT = 5;
+
+const quickActions = [
+    "Help me with course registration",
+    "What are admission requirements?",
+    "Tell me about campus events",
+    "Explain university policies",
+    "Academic calendar info"
+];
 
 export default function ChatPage() {
     const router = useRouter();
@@ -61,54 +58,44 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [copiedId, setCopiedId] = useState<string | null>(null);
     const [messageCount, setMessageCount] = useState(0);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    // For trial users: 5 messages, for logged in users: unlimited
     const hasMessageLimit = isTrial && !user;
     const remainingMessages = hasMessageLimit ? TRIAL_MESSAGE_LIMIT - messageCount : Infinity;
 
-    // Format time remaining
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Check access
     useEffect(() => {
         if (!authLoading && !user && !isTrial) {
             router.push('/login');
         }
     }, [user, isTrial, authLoading, router]);
 
-    // Redirect when trial expires
     useEffect(() => {
         if (isTrial && trialTimeLeft <= 0) {
             router.push('/login');
         }
     }, [isTrial, trialTimeLeft, router]);
 
-    // Load message count from storage
     useEffect(() => {
         const stored = localStorage.getItem('askuni_message_count');
-        if (stored) {
-            setMessageCount(parseInt(stored));
-        }
+        if (stored) setMessageCount(parseInt(stored));
 
-        // Load chat history from localStorage
         const savedMessages = localStorage.getItem('askuni_chat_messages');
         if (savedMessages) {
             try {
                 const parsed = JSON.parse(savedMessages);
-                // Convert timestamp strings back to Date objects
                 const messagesWithDates = parsed.map((m: Message) => ({
                     ...m,
                     timestamp: new Date(m.timestamp),
-                    isStreaming: false, // Reset streaming state on load
+                    isStreaming: false,
                 }));
                 setMessages(messagesWithDates);
             } catch (e) {
@@ -116,7 +103,6 @@ export default function ChatPage() {
             }
         }
 
-        // Load conversations from localStorage
         const savedConversations = localStorage.getItem('askuni_conversations');
         if (savedConversations) {
             try {
@@ -136,10 +122,8 @@ export default function ChatPage() {
         }
     }, []);
 
-    // Save messages to localStorage whenever they change
     useEffect(() => {
         if (messages.length > 0) {
-            // Only save if not currently streaming
             const isAnyStreaming = messages.some(m => m.isStreaming);
             if (!isAnyStreaming) {
                 localStorage.setItem('askuni_chat_messages', JSON.stringify(messages));
@@ -147,7 +131,6 @@ export default function ChatPage() {
         }
     }, [messages]);
 
-    // Save conversations to localStorage
     useEffect(() => {
         if (conversations.length > 0) {
             localStorage.setItem('askuni_conversations', JSON.stringify(conversations));
@@ -162,24 +145,10 @@ export default function ChatPage() {
         scrollToBottom();
     }, [messages]);
 
-    // Auto-resize textarea
-    useEffect(() => {
-        if (inputRef.current) {
-            inputRef.current.style.height = 'auto';
-            inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 150) + 'px';
-        }
-    }, [inputValue]);
+    const sendMessage = async (text?: string) => {
+        const messageText = text || inputValue.trim();
+        if (!messageText || isLoading) return;
 
-    const copyToClipboard = async (text: string, id: string) => {
-        await navigator.clipboard.writeText(text);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
-    };
-
-    const sendMessage = async () => {
-        if (!inputValue.trim() || isLoading) return;
-
-        // Check message limit for trial users
         if (hasMessageLimit && remainingMessages <= 0) {
             router.push('/login?reason=limit');
             return;
@@ -188,7 +157,7 @@ export default function ChatPage() {
         const userMessage: Message = {
             id: Date.now().toString(),
             role: 'user',
-            content: inputValue.trim(),
+            content: messageText,
             timestamp: new Date(),
         };
 
@@ -196,7 +165,6 @@ export default function ChatPage() {
         setInputValue('');
         setIsLoading(true);
 
-        // Increment message count only for trial users
         if (hasMessageLimit) {
             const newCount = messageCount + 1;
             setMessageCount(newCount);
@@ -213,14 +181,11 @@ export default function ChatPage() {
         }]);
 
         try {
-            // Only send last few messages for context (memory window)
             const contextMessages = [...messages, userMessage].slice(-6);
 
             const response = await fetch('http://localhost:8000/api/chat/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: contextMessages.map(m => ({
                         role: m.role,
@@ -255,25 +220,17 @@ export default function ChatPage() {
                                     m.id === assistantId ? { ...m, sources } : m
                                 ));
                             } else if (data.type === 'content') {
-                                // Add content piece by piece for smooth streaming
-                                const newContent = data.data;
-                                accumulatedContent += newContent;
-
-                                // Update message immediately for real-time streaming
+                                accumulatedContent += data.data;
                                 setMessages(prev => prev.map(m =>
                                     m.id === assistantId ? { ...m, content: accumulatedContent } : m
                                 ));
-
-                                // Scroll to bottom as content streams in
                                 setTimeout(() => scrollToBottom(), 10);
                             } else if (data.type === 'done') {
                                 setMessages(prev => prev.map(m =>
                                     m.id === assistantId ? { ...m, isStreaming: false } : m
                                 ));
                             }
-                        } catch {
-                            // Skip invalid JSON
-                        }
+                        } catch { }
                     }
                 }
             }
@@ -296,24 +253,6 @@ export default function ChatPage() {
         }
     };
 
-    const loadConversation = (conversation: Conversation) => {
-        // Save current conversation if it has messages
-        if (messages.length > 0 && !conversations.find(c => c.id === conversation.id)) {
-            const currentConv: Conversation = {
-                id: Date.now().toString(),
-                title: messages[0]?.content.slice(0, 30) + '...' || 'New Chat',
-                timestamp: new Date(),
-                messages: messages,
-            };
-            setConversations(prev => [currentConv, ...prev]);
-        }
-
-        // Load the selected conversation
-        setMessages(conversation.messages);
-        setSidebarOpen(false);
-        setTimeout(() => scrollToBottom(), 100);
-    };
-
     const startNewChat = () => {
         if (messages.length > 0) {
             const newConv: Conversation = {
@@ -326,7 +265,21 @@ export default function ChatPage() {
         }
         setMessages([]);
         setSidebarOpen(false);
-        inputRef.current?.focus();
+    };
+
+    const loadConversation = (conversation: Conversation) => {
+        if (messages.length > 0) {
+            const currentConv: Conversation = {
+                id: Date.now().toString(),
+                title: messages[0]?.content.slice(0, 30) + '...' || 'New Chat',
+                timestamp: new Date(),
+                messages: messages,
+            };
+            setConversations(prev => [currentConv, ...prev]);
+        }
+        setMessages(conversation.messages);
+        setSidebarOpen(false);
+        setTimeout(() => scrollToBottom(), 100);
     };
 
     const handleSignOut = async () => {
@@ -339,23 +292,22 @@ export default function ChatPage() {
         return { __html: marked.parse(content) as string };
     };
 
-    // Show loading while checking auth
     if (authLoading) {
         return (
-            <div className="h-screen flex items-center justify-center gradient-bg">
+            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-orange-50">
                 <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-lg border border-white/30 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <GraduationCap className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-white/80">Loading AskUni...</p>
+                    <p className="text-gray-600">Loading AskUni...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen gradient-bg overflow-hidden">
-            {/* Sidebar Overlay */}
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-orange-50 relative overflow-hidden">
+            {/* Sidebar */}
             <AnimatePresence>
                 {sidebarOpen && (
                     <>
@@ -363,84 +315,64 @@ export default function ChatPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+                            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
                             onClick={() => setSidebarOpen(false)}
                         />
                         <motion.aside
                             initial={{ x: -320 }}
                             animate={{ x: 0 }}
                             exit={{ x: -320 }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed z-50 w-80 h-full glass-card !rounded-none border-r border-white/20 flex flex-col shadow-2xl"
+                            className="fixed z-50 w-80 h-full bg-white/90 backdrop-blur-xl border-r border-gray-200 flex flex-col shadow-2xl"
                         >
-                            {/* Sidebar Header */}
-                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                                        <GraduationCap className="w-5 h-5 text-white" />
+                            <div className="p-4 border-b border-gray-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
+                                        <GraduationCap className="w-6 h-6 text-white" />
                                     </div>
-                                    <span className="font-semibold text-white">AskUni</span>
+                                    <span className="font-bold text-gray-900">AskUni</span>
                                 </div>
-                                <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/10">
-                                    <X className="w-5 h-5 text-white/80" />
-                                </button>
-                            </div>
-
-                            {/* New Chat Button */}
-                            <div className="p-4">
                                 <button
                                     onClick={startNewChat}
-                                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 hover:opacity-90 transition-all flex items-center justify-center gap-2 font-medium"
+                                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-orange-400 to-orange-500 hover:opacity-90 text-white font-medium"
                                 >
-                                    <Plus className="w-5 h-5" />
-                                    New Chat
+                                    + New Chat
                                 </button>
                             </div>
 
-                            {/* Conversations */}
-                            <div className="flex-1 overflow-y-auto px-3">
-                                <p className="text-xs text-white/60 px-2 mb-2 uppercase tracking-wider">Recent Chats</p>
+                            <div className="flex-1 overflow-y-auto p-3">
+                                <p className="text-xs text-gray-500 px-2 mb-2 uppercase">Recent Chats</p>
                                 {conversations.length > 0 ? (
                                     conversations.map(conv => (
                                         <button
                                             key={conv.id}
                                             onClick={() => loadConversation(conv)}
-                                            className="w-full text-left p-3 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-3 text-sm text-white/90 mb-1"
+                                            className="w-full text-left p-3 rounded-xl hover:bg-gray-100 transition flex items-center gap-3 mb-1"
                                         >
                                             <MessageSquare className="w-4 h-4 text-gray-500 flex-shrink-0" />
                                             <div className="flex-1 min-w-0">
-                                                <p className="truncate">{conv.title}</p>
-                                                <p className="text-xs text-gray-600 mt-0.5">
-                                                    {conv.messages.length} messages
-                                                </p>
+                                                <p className="text-sm text-gray-900 truncate">{conv.title}</p>
+                                                <p className="text-xs text-gray-500">{conv.messages.length} messages</p>
                                             </div>
                                         </button>
                                     ))
                                 ) : (
-                                    <p className="text-gray-600 text-sm px-2 py-4">No previous chats</p>
+                                    <p className="text-gray-500 text-sm px-2 py-4">No previous chats</p>
                                 )}
                             </div>
 
-                            {/* User Info */}
-                            <div className="p-4 border-t border-white/5">
+                            <div className="p-4 border-t border-gray-200">
                                 {user && (
-                                    <div className="mb-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                                        <p className="text-sm text-gray-300 truncate font-medium">{user.email}</p>
-                                        <p className="text-xs text-green-400 mt-1">✓ Unlimited messages</p>
-                                    </div>
-                                )}
-                                {isTrial && !user && (
-                                    <div className="mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                        <p className="text-sm text-amber-300 font-medium">Free Trial</p>
-                                        <p className="text-xs text-amber-400 mt-1">{remainingMessages} of 5 messages left</p>
+                                    <div className="mb-3 p-3 rounded-xl bg-green-50 border border-green-200">
+                                        <p className="text-sm text-gray-900 truncate font-medium">{user.email}</p>
+                                        <p className="text-xs text-green-600 mt-1">✓ Unlimited messages</p>
                                     </div>
                                 )}
                                 <button
                                     onClick={handleSignOut}
-                                    className="w-full p-3 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-3 text-white/80"
+                                    className="w-full p-3 rounded-xl hover:bg-gray-100 flex items-center gap-3 text-gray-700"
                                 >
                                     <LogOut className="w-5 h-5" />
-                                    <span>{isTrial ? 'End Trial' : 'Sign Out'}</span>
+                                    <span>Sign Out</span>
                                 </button>
                             </div>
                         </motion.aside>
@@ -448,229 +380,174 @@ export default function ChatPage() {
                 )}
             </AnimatePresence>
 
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col">
-                {/* Trial Banner */}
-                {isTrial && (
-                    <div className="bg-gradient-to-r from-primary-600 to-accent-600 px-4 py-2">
-                        <div className="max-w-4xl mx-auto flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-4 text-white/90">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4" />
-                                    <span className="font-medium">{formatTime(trialTimeLeft)}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Zap className="w-4 h-4" />
-                                    <span>{remainingMessages === Infinity ? '∞' : remainingMessages} left</span>
-                                </div>
-                            </div>
-                            <Link href="/login" className="bg-white/20 hover:bg-white/30 px-4 py-1 rounded-full text-white font-medium transition-all text-xs">
-                                Sign Up Free
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
-                {/* Header */}
-                <header className="h-14 flex items-center justify-between px-4 border-b border-white/10 backdrop-blur-sm bg-white/5">
+            {/* Header */}
+            <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-gray-100"
                         >
-                            <Menu className="w-5 h-5 text-white/80" />
+                            <Menu className="w-5 h-5 text-gray-700" />
                         </button>
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
                                 <GraduationCap className="w-5 h-5 text-white" />
                             </div>
-                            <span className="font-semibold hidden sm:inline text-white">AskUni</span>
+                            <span className="font-bold text-gray-900">AskUni</span>
                         </Link>
                     </div>
 
-                    {user && (
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                            <div className="w-2 h-2 rounded-full bg-green-400" />
-                            <span className="text-xs text-green-400 font-medium">Pro</span>
+                    {isTrial && (
+                        <div className="flex items-center gap-3 text-sm text-gray-700">
+                            <Clock className="w-4 h-4" />
+                            <span>{formatTime(trialTimeLeft)}</span>
+                            <span className="text-gray-400">|</span>
+                            <Zap className="w-4 h-4" />
+                            <span>{remainingMessages} left</span>
                         </div>
                     )}
-                </header>
+                </div>
+            </header>
 
-                {/* Chat Content */}
-                <div className="flex-1 overflow-y-auto">
-                    {messages.length === 0 ? (
-                        /* Welcome Screen */
-                        <div className="h-full flex flex-col items-center justify-center px-4 py-8">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-xl w-full text-center"
-                            >
-                                {/* Logo */}
-                                <div className="mb-6">
-                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto shadow-xl shadow-primary-500/20">
-                                        <GraduationCap className="w-10 h-10 text-white" />
+            {/* Main Content */}
+            <div className="pt-16 min-h-screen flex flex-col">
+                {messages.length === 0 ? (
+                    /* Welcome Screen */
+                    <div className="flex-1 flex items-center justify-center px-4 pb-32">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="max-w-3xl w-full text-center"
+                        >
+                            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+                                Let&apos;s make your dream a{' '}
+                                <span className="bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
+                                    reality.
+                                </span>
+                                <br />
+                                Right now.
+                            </h1>
+
+                            <p className="text-gray-600 text-lg mb-12">
+                                AskUni helps you navigate university life with AI-powered assistance.
+                                <br />
+                                No complexity necessary.
+                            </p>
+
+                            {/* Input Box */}
+                            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 mb-6">
+                                <div className="relative">
+                                    <textarea
+                                        ref={inputRef}
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={handleKeyPress}
+                                        placeholder="What do you want to know?"
+                                        rows={1}
+                                        className="w-full bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none resize-none pr-14 text-lg"
+                                    />
+                                    <button
+                                        onClick={() => sendMessage()}
+                                        disabled={!inputValue.trim() || isLoading}
+                                        className="absolute right-0 top-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 disabled:opacity-50 flex items-center justify-center text-white hover:shadow-lg transition"
+                                    >
+                                        <ArrowUp className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t border-gray-200">
+                                    <p className="text-sm text-gray-600 mb-3">Not sure where to start? Try one of these:</p>
+                                    <div className="flex flex-wrap gap-2 justify-center">
+                                        {quickActions.map((action, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => sendMessage(action)}
+                                                className="px-4 py-2 rounded-full border border-gray-300 hover:border-orange-400 hover:bg-orange-50 text-sm text-gray-700 transition"
+                                            >
+                                                {action}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-
-                                <h1 className="text-2xl md:text-3xl font-bold mb-3">
-                                    Hi! I&apos;m <span className="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">AskUni</span>
-                                </h1>
-                                <p className="text-gray-400 mb-8">
-                                    Your AI university assistant. Ask me anything!
-                                </p>
-
-                                {/* Quick Actions */}
-                                <div className="grid grid-cols-2 gap-3 mb-8">
-                                    {[
-                                        { icon: BookOpen, label: "Courses", query: "Tell me about available courses" },
-                                        { icon: Users, label: "Admissions", query: "What are admission requirements?" },
-                                        { icon: Calendar, label: "Deadlines", query: "What are upcoming deadlines?" },
-                                        { icon: Sparkles, label: "Events", query: "What events are happening?" },
-                                    ].map((item, i) => (
-                                        <motion.button
-                                            key={i}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.1 * i }}
-                                            onClick={() => setInputValue(item.query)}
-                                            className="p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-500/30 transition-all group text-left"
-                                        >
-                                            <item.icon className="w-5 h-5 text-primary-400 mb-2" />
-                                            <span className="text-sm text-gray-300 group-hover:text-white">{item.label}</span>
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        </div>
-                    ) : (
-                        /* Messages */
-                        <div className="max-w-3xl mx-auto py-6 px-4">
-                            {messages.map((message) => (
-                                <motion.div
-                                    key={message.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mb-6"
-                                >
-                                    {message.role === 'user' ? (
-                                        /* User Message */
-                                        <div className="flex justify-end">
-                                            <div className="max-w-[85%] bg-primary-500/20 border border-primary-500/30 rounded-2xl rounded-br-sm px-4 py-3">
-                                                <p className="text-white">{message.content}</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        /* AI Message */
-                                        <div className="flex gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center flex-shrink-0">
-                                                <Sparkles className="w-4 h-4 text-white" />
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                {/* Sources */}
-                                                {message.sources && message.sources.length > 0 && (
-                                                    <div className="mb-3 flex gap-2 overflow-x-auto pb-2">
-                                                        {message.sources.slice(0, 3).map((source, i) => (
-                                                            <a
-                                                                key={i}
-                                                                href={source.url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="flex-shrink-0 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs flex items-center gap-2"
-                                                            >
-                                                                <Globe className="w-3 h-3 text-primary-400" />
-                                                                <span className="truncate max-w-[100px]">{source.title}</span>
-                                                                <ExternalLink className="w-3 h-3 text-gray-500" />
-                                                            </a>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Thinking indicator */}
-                                                {message.isStreaming && !message.content && (
-                                                    <div className="flex items-center gap-2 text-gray-400">
-                                                        <div className="flex gap-1">
-                                                            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                            <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                                        </div>
-                                                        <span className="text-sm">Thinking...</span>
-                                                    </div>
-                                                )}
-
-                                                {/* Message content */}
-                                                {message.content && (
-                                                    <div className="relative">
-                                                        <div
-                                                            className="prose prose-invert prose-sm max-w-none prose-p:text-gray-300 prose-headings:text-white prose-strong:text-white prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-white/10"
-                                                            dangerouslySetInnerHTML={renderMarkdown(message.content)}
-                                                        />
-                                                        {/* Blinking cursor while streaming */}
-                                                        {message.isStreaming && (
-                                                            <span className="inline-block w-0.5 h-4 bg-primary-400 animate-pulse ml-0.5" />
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {/* Actions */}
-                                                {!message.isStreaming && message.content && (
-                                                    <div className="flex items-center gap-1 mt-3">
-                                                        <button
-                                                            onClick={() => copyToClipboard(message.content, message.id)}
-                                                            className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-gray-300 transition-all"
-                                                        >
-                                                            {copiedId === message.id ? (
-                                                                <Check className="w-4 h-4 text-green-400" />
-                                                            ) : (
-                                                                <Copy className="w-4 h-4" />
-                                                            )}
-                                                        </button>
-                                                        <button className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-gray-300 transition-all">
-                                                            <RefreshCw className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-                    )}
-                </div>
-
-                {/* Input Area - Clean Design */}
-                <div className="p-4 border-t border-white/5">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="glass-input rounded-2xl border border-white/20 focus-within:border-white/40 transition-colors">
-                            <textarea
-                                ref={inputRef}
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyPress}
-                                placeholder={hasMessageLimit && remainingMessages <= 0 ? "Message limit reached" : "Ask me anything..."}
-                                disabled={hasMessageLimit && remainingMessages <= 0}
-                                rows={1}
-                                className="w-full bg-transparent py-4 px-4 pr-14 text-white placeholder-gray-500 focus:outline-none resize-none max-h-32 disabled:opacity-50"
-                            />
-                            <button
-                                onClick={sendMessage}
-                                disabled={!inputValue.trim() || isLoading || (hasMessageLimit && remainingMessages <= 0)}
-                                className={`absolute right-3 bottom-3 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${inputValue.trim() && !isLoading && (!hasMessageLimit || remainingMessages > 0)
-                                    ? 'bg-primary-500 hover:bg-primary-400 text-white'
-                                    : 'bg-white/10 text-gray-500'
-                                    }`}
-                            >
-                                <ArrowUp className="w-4 h-4" />
-                            </button>
-                        </div>
-                        <p className="text-center text-xs text-gray-600 mt-2">
-                            AskUni can make mistakes. Verify important information.
-                        </p>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
+                ) : (
+                    /* Chat Messages */
+                    <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
+                        {messages.map((message) => (
+                            <motion.div
+                                key={message.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-6"
+                            >
+                                {message.role === 'user' ? (
+                                    <div className="flex justify-end">
+                                        <div className="max-w-[80%] bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-3xl rounded-br-sm px-6 py-3 shadow-lg">
+                                            <p>{message.content}</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div className="flex-1 bg-white/80 backdrop-blur-xl rounded-3xl rounded-tl-sm px-6 py-4 shadow-lg">
+                                            {message.isStreaming && !message.content && (
+                                                <div className="flex items-center gap-2 text-gray-500">
+                                                    <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" />
+                                                    <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                    <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                                    <span className="ml-2">Thinking...</span>
+                                                </div>
+                                            )}
+                                            {message.content && (
+                                                <div
+                                                    className="prose prose-sm max-w-none prose-p:text-gray-800 prose-headings:text-gray-900 prose-strong:text-gray-900"
+                                                    dangerouslySetInnerHTML={renderMarkdown(message.content)}
+                                                />
+                                            )}
+                                            {message.isStreaming && message.content && (
+                                                <span className="inline-block w-0.5 h-5 bg-orange-500 animate-pulse ml-1" />
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                    </div>
+                )}
+
+                {/* Fixed Input (when in chat) */}
+                {messages.length > 0 && (
+                    <div className="sticky bottom-0 bg-gradient-to-t from-orange-50/50 to-transparent backdrop-blur-sm p-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-4">
+                                <div className="relative">
+                                    <textarea
+                                        ref={inputRef}
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={handleKeyPress}
+                                        placeholder="Ask a follow-up..."
+                                        rows={1}
+                                        className="w-full bg-transparent text-gray-900 placeholder-gray-400 focus:outline-none resize-none pr-14"
+                                    />
+                                    <button
+                                        onClick={() => sendMessage()}
+                                        disabled={!inputValue.trim() || isLoading}
+                                        className="absolute right-0 top-0 w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 disabled:opacity-50 flex items-center justify-center text-white"
+                                    >
+                                        <ArrowUp className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

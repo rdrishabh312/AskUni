@@ -371,18 +371,18 @@ export default function ChatPage() {
                             animate={{ x: 0 }}
                             exit={{ x: -320 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed z-50 w-80 h-full bg-[#111111] border-r border-white/5 flex flex-col shadow-2xl"
+                            className="fixed z-50 w-80 h-full glass-card !rounded-none border-r border-white/20 flex flex-col shadow-2xl"
                         >
                             {/* Sidebar Header */}
-                            <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                                    <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                                         <GraduationCap className="w-5 h-5 text-white" />
                                     </div>
-                                    <span className="font-semibold">AskUni</span>
+                                    <span className="font-semibold text-white">AskUni</span>
                                 </div>
-                                <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/5">
-                                    <X className="w-5 h-5 text-gray-400" />
+                                <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-white/10">
+                                    <X className="w-5 h-5 text-white/80" />
                                 </button>
                             </div>
 
@@ -399,13 +399,13 @@ export default function ChatPage() {
 
                             {/* Conversations */}
                             <div className="flex-1 overflow-y-auto px-3">
-                                <p className="text-xs text-gray-500 px-2 mb-2 uppercase tracking-wider">Recent Chats</p>
+                                <p className="text-xs text-white/60 px-2 mb-2 uppercase tracking-wider">Recent Chats</p>
                                 {conversations.length > 0 ? (
                                     conversations.map(conv => (
                                         <button
                                             key={conv.id}
                                             onClick={() => loadConversation(conv)}
-                                            className="w-full text-left p-3 rounded-xl hover:bg-white/5 transition-colors flex items-center gap-3 text-sm text-gray-300 mb-1"
+                                            className="w-full text-left p-3 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-3 text-sm text-white/90 mb-1"
                                         >
                                             <MessageSquare className="w-4 h-4 text-gray-500 flex-shrink-0" />
                                             <div className="flex-1 min-w-0">
@@ -437,7 +437,7 @@ export default function ChatPage() {
                                 )}
                                 <button
                                     onClick={handleSignOut}
-                                    className="w-full p-3 rounded-xl hover:bg-white/5 transition-colors flex items-center gap-3 text-gray-400"
+                                    className="w-full p-3 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-3 text-white/80"
                                 >
                                     <LogOut className="w-5 h-5" />
                                     <span>{isTrial ? 'End Trial' : 'Sign Out'}</span>
@@ -472,19 +472,19 @@ export default function ChatPage() {
                 )}
 
                 {/* Header */}
-                <header className="h-14 flex items-center justify-between px-4 border-b border-white/5">
+                <header className="h-14 flex items-center justify-between px-4 border-b border-white/10 backdrop-blur-sm bg-white/5">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                         >
-                            <Menu className="w-5 h-5 text-gray-400" />
+                            <Menu className="w-5 h-5 text-white/80" />
                         </button>
                         <Link href="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
                                 <GraduationCap className="w-5 h-5 text-white" />
                             </div>
-                            <span className="font-semibold hidden sm:inline">AskUni</span>
+                            <span className="font-semibold hidden sm:inline text-white">AskUni</span>
                         </Link>
                     </div>
 
@@ -644,7 +644,7 @@ export default function ChatPage() {
                 {/* Input Area - Clean Design */}
                 <div className="p-4 border-t border-white/5">
                     <div className="max-w-3xl mx-auto">
-                        <div className="relative bg-[#1a1a1a] rounded-2xl border border-white/10 focus-within:border-primary-500/50 transition-colors">
+                        <div className="glass-input rounded-2xl border border-white/20 focus-within:border-white/40 transition-colors">
                             <textarea
                                 ref={inputRef}
                                 value={inputValue}

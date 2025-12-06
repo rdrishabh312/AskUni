@@ -492,7 +492,7 @@ export default function ChatPage() {
                                             )}
                                             {message.content && (
                                                 <div
-                                                    className="prose prose-sm max-w-none prose-p:text-gray-800 prose-headings:text-gray-900 prose-strong:text-gray-900"
+                                                    className="prose prose-sm max-w-none prose-p:text-gray-900 prose-headings:text-gray-900 prose-strong:text-black prose-code:text-orange-700 prose-code:bg-orange-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 prose-pre:text-gray-900 prose-a:text-orange-600"
                                                     dangerouslySetInnerHTML={renderMarkdown(message.content)}
                                                 />
                                             )}

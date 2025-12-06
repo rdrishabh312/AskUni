@@ -28,9 +28,9 @@ export default function ContactPage() {
             color: 'hover:text-blue-400'
         },
         {
-            name: 'Twitter',
+            name: 'X (Twitter)',
             icon: Twitter,
-            url: 'https://twitter.com/rdrishabh312',
+            url: 'https://x.com/rdrishabh312',
             color: 'hover:text-sky-400'
         },
         {

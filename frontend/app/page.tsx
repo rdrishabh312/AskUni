@@ -348,10 +348,22 @@ export default function HomePage() {
                                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-xs sm:text-sm">Contact</Link>
                             </div>
 
-                            <p className="text-gray-500 text-xs sm:text-sm text-center md:text-right">
-                                © 2025 AskUni. By{' '}
-                                <span className="text-primary-400 font-medium">rdrishabh312</span>
-                            </p>
+                            <div className="flex flex-col items-center md:items-end gap-2">
+                                <p className="text-gray-500 text-xs sm:text-sm text-center md:text-right">
+                                    © 2025 AskUni. All rights reserved.
+                                </p>
+                                <a
+                                    href="https://github.com/rdrishabh312"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+                                >
+                                    <span className="text-xs text-gray-400">Developed by</span>
+                                    <span className="text-xs font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent group-hover:from-primary-300 group-hover:to-accent-300">
+                                        rdrishabh312
+                                    </span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </footer>

@@ -92,6 +92,9 @@ export default function HomePage() {
                                 <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">AskUni</span>
                             </div>
                             <div className="flex items-center gap-4">
+                                <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+                                    Home
+                                </Link>
                                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
                                     About
                                 </Link>
@@ -108,7 +111,7 @@ export default function HomePage() {
                                     href="/chat"
                                     className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-accent-500 hover:opacity-90 transition-opacity font-medium"
                                 >
-                                    Try Free
+                                    Sign Up Free
                                 </Link>
                             </div>
                         </div>
@@ -139,7 +142,7 @@ export default function HomePage() {
                                     href="/chat"
                                     className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 hover:opacity-90 transition-all font-semibold text-lg flex items-center gap-2 shadow-xl shadow-primary-500/20"
                                 >
-                                    Start Chatting <ArrowRight className="w-5 h-5" />
+                                    Sign Up Free <ArrowRight className="w-5 h-5" />
                                 </Link>
                                 <Link
                                     href="/about"
@@ -220,7 +223,7 @@ export default function HomePage() {
                                 href="/chat"
                                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-lg shadow-2xl hover:shadow-white/30 hover:scale-105 duration-300"
                             >
-                                Start Free Trial <ArrowRight className="w-5 h-5" />
+                                Sign Up Free <ArrowRight className="w-5 h-5" />
                             </Link>
                         </div>
                     </div>
@@ -237,7 +240,7 @@ export default function HomePage() {
                                 <span className="font-semibold">AskUni</span>
                             </div>
                             <p className="text-gray-500 text-sm">
-                                © 2025 AskUni. All rights reserved.
+                                © 2025 AskUni. Developed by <span className="text-primary-400 font-medium">rdrishabh312</span>
                             </p>
                             <div className="flex items-center gap-6">
                                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">

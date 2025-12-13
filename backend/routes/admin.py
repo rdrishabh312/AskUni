@@ -9,9 +9,11 @@ from datetime import datetime
 
 from services.ollama_service import ollama_service
 from services.supabase_service import supabase_service
+from config import get_settings
 
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+settings = get_settings()
 
 
 class ModelConfigRequest(BaseModel):
@@ -151,6 +153,7 @@ async def get_config():
     """
     Get current AI configuration.
     """
+    return {
         "model": ollama_service.model,
         "system_prompt": ollama_service.system_prompt,
         "ollama_host": settings.ollama_host

@@ -560,8 +560,9 @@ export default function ChatPage() {
                                                         {/* 
                                                           Markdown rendered content with inline cursor.
                                                           The content appears in real-time as it streams.
+                                                          Links appear in BLUE color to stand out.
                                                         */}
-                                                        <div className="chat-prose prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none">
+                                                        <div className="chat-prose prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-blue-400 prose-a:font-medium prose-a:hover:underline max-w-none">
                                                             {/* Render markdown content */}
                                                             <span
                                                                 dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
@@ -586,11 +587,11 @@ export default function ChatPage() {
                                                                     href={source.url}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="flex items-start gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-500/30 transition-all group"
+                                                                    className="flex items-start gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-blue-500/30 transition-all group"
                                                                 >
-                                                                    <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-primary-400 mt-0.5 shrink-0" />
+                                                                    <ExternalLink className="w-4 h-4 text-blue-400 group-hover:text-blue-300 mt-0.5 shrink-0" />
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className="text-sm font-medium text-gray-200 group-hover:text-white truncate">{source.title}</p>
+                                                                        <p className="text-sm font-medium text-blue-400 group-hover:text-blue-300 truncate">{source.title}</p>
                                                                         <p className="text-xs text-gray-500 line-clamp-2">{source.snippet}</p>
                                                                     </div>
                                                                 </a>
@@ -637,11 +638,13 @@ export default function ChatPage() {
                                         )}
                                     </div>
 
-                                    {message.role === 'user' && (
-                                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0 ml-4 mt-2">
-                                            <User className="w-4 h-4 text-gray-300" />
-                                        </div>
-                                    )}
+                                    {
+                                        message.role === 'user' && (
+                                            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0 ml-4 mt-2">
+                                                <User className="w-4 h-4 text-gray-300" />
+                                            </div>
+                                        )
+                                    }
                                 </motion.div>
                             ))}
                             <div ref={messagesEndRef} className="h-4" />
@@ -691,6 +694,6 @@ export default function ChatPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

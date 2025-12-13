@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+// React hooks for state management, refs, effects, and memoization
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
     GraduationCap,
@@ -145,41 +146,76 @@ export default function ChatPage() {
         }
     }, [conversations]);
 
-    const scrollToBottom = () => {
+    /**
+     * Smooth scroll to the bottom of the messages container.
+     * Uses smooth scrolling for a better UX experience.
+     */
+    const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    }, []);
 
+    // Auto-scroll when messages change or content updates
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, displayedContent, scrollToBottom]);
 
-    // Typewriter effect for streaming messages
+    /**
+     * ChatGPT-style Typewriter Effect
+     * ================================
+     * Creates a smooth character-by-character typing animation:
+     * - Displays text progressively like someone is typing
+     * - Uses variable speed based on content length for natural feel
+     * - Automatically scrolls as new content appears
+     * - Shows blinking cursor while streaming (handled in JSX)
+     */
     useEffect(() => {
-        const streamingMessages = messages.filter(m => m.role === 'assistant' && m.isStreaming && m.content);
+        // Find all messages that are currently being streamed
+        const streamingMessages = messages.filter(
+            m => m.role === 'assistant' && m.isStreaming && m.content
+        );
 
+        // Process each streaming message
         streamingMessages.forEach(msg => {
             const targetContent = msg.content;
             const currentDisplayed = displayedContent[msg.id] || '';
 
+            // If we haven't displayed all characters yet, continue typing
             if (currentDisplayed.length < targetContent.length) {
                 const timer = setTimeout(() => {
-                    const charsToAdd = Math.min(3, targetContent.length - currentDisplayed.length); // Add 3 chars at a time for smoother effect
+                    // Add 1-2 characters at a time for smooth, natural typing
+                    // Faster for longer content, slower for short responses
+                    const charsToAdd = targetContent.length > 500 ? 2 : 1;
+                    const newLength = Math.min(
+                        currentDisplayed.length + charsToAdd,
+                        targetContent.length
+                    );
+
                     setDisplayedContent(prev => ({
                         ...prev,
-                        [msg.id]: targetContent.slice(0, currentDisplayed.length + charsToAdd)
+                        [msg.id]: targetContent.slice(0, newLength)
                     }));
-                }, 10); // Very fast interval for smooth typing
+
+                    // Auto-scroll as content appears
+                    scrollToBottom();
+                }, 15); // 15ms delay for smooth animation (~66 chars/second)
 
                 return () => clearTimeout(timer);
-            } else if (!msg.isStreaming && currentDisplayed !== targetContent) {
-                // Ensure final content is complete when streaming stops
-                setDisplayedContent(prev => ({
-                    ...prev,
-                    [msg.id]: targetContent
-                }));
             }
         });
-    }, [messages, displayedContent]);
+
+        // When streaming stops, ensure final content is complete
+        messages.forEach(msg => {
+            if (msg.role === 'assistant' && !msg.isStreaming && msg.content) {
+                const currentDisplayed = displayedContent[msg.id];
+                if (currentDisplayed !== msg.content) {
+                    setDisplayedContent(prev => ({
+                        ...prev,
+                        [msg.id]: msg.content
+                    }));
+                }
+            }
+        });
+    }, [messages, displayedContent, scrollToBottom]);
 
     const sendMessage = async (text?: string) => {
         const messageText = text || inputValue.trim();
@@ -471,8 +507,8 @@ export default function ChatPage() {
                     {isTrial && <span className="ml-auto text-xs px-2 py-1 rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">{remainingMessages} left</span>}
                 </header>
 
-                {/* Messages Area - SCROLLABLE */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-0 scroll-smooth">
+                {/* Messages Area - SCROLLABLE with smooth scroll behavior */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar chat-scroll-container p-0">
                     {messages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center p-4 min-h-[500px]">
                             {/* Welcome Content */}
@@ -518,27 +554,42 @@ export default function ChatPage() {
                                         </div>
                                     )}
 
+                                    {/* Message bubble container with responsive styling */}
                                     <div className={`max-w-[85%] ${message.role === 'user'
                                         ? 'bg-[#1e293b] text-white rounded-3xl rounded-br-sm border border-white/5'
                                         : 'bg-transparent'
                                         } px-6 py-4 shadow-sm`}>
+
+                                        {/* User message - simple text display */}
                                         {message.role === 'user' ? (
-                                            <p className="text-base leading-relaxed">{message.content}</p>
+                                            <p className="chat-message-text leading-relaxed">{message.content}</p>
                                         ) : (
+                                            /* Assistant message with typewriter effect */
                                             <div className="space-y-4">
+
+                                                {/* Typing indicator - shows 3 bouncing dots while waiting */}
                                                 {message.isStreaming && !message.content && (
-                                                    <div className="flex items-center gap-1 h-6">
-                                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" />
-                                                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" />
+                                                    <div className="flex items-center gap-2 h-6 py-2">
+                                                        <span className="typing-dot" />
+                                                        <span className="typing-dot" />
+                                                        <span className="typing-dot" />
                                                     </div>
                                                 )}
 
+                                                {/* Message content with ChatGPT-style typing animation */}
                                                 {message.content && (
-                                                    <div
-                                                        className="prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none leading-relaxed text-[15px]"
-                                                        dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
-                                                    />
+                                                    <div className="relative">
+                                                        {/* Markdown rendered content */}
+                                                        <div
+                                                            className="chat-prose prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none"
+                                                            dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
+                                                        />
+
+                                                        {/* Blinking cursor - shows while still typing */}
+                                                        {message.isStreaming && displayedContent[message.id] && (
+                                                            <span className="typing-cursor typing-cursor-light" />
+                                                        )}
+                                                    </div>
                                                 )}
 
                                                 {/* Sources */}

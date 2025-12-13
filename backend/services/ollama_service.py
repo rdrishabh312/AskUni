@@ -3,12 +3,17 @@ Ollama Service - Integration with local Ollama AI models.
 Provides chat completion, streaming, and model management.
 """
 
+import json
+import os
 import ollama
 from typing import AsyncGenerator, Optional, List, Dict, Any
 from config import get_settings
 
 
 settings = get_settings()
+
+# Config file for persistent storage
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "ai_config.json")
 
 # Default system prompt - can be updated via admin panel
 DEFAULT_SYSTEM_PROMPT = """You are AskUni, an intelligent AI assistant designed specifically for university students and staff.
@@ -51,12 +56,38 @@ class OllamaService:
     def __init__(self):
         self.client = ollama.Client(host=settings.ollama_host)
         self.model = settings.ollama_model
-        self.system_prompt = DEFAULT_SYSTEM_PROMPT
+        self.system_prompt = self._load_config()
+    
+    def _load_config(self) -> str:
+        """Load system prompt from config file, or return default."""
+        try:
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    saved_prompt = data.get('system_prompt', '')
+                    if saved_prompt and len(saved_prompt) > 10:
+                        print("📄 Loaded system prompt from config file")
+                        return saved_prompt
+        except Exception as e:
+            print(f"⚠️ Could not load config file: {e}")
+        return DEFAULT_SYSTEM_PROMPT
+    
+    def _save_config(self) -> bool:
+        """Save current system prompt to config file."""
+        try:
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump({'system_prompt': self.system_prompt}, f, indent=2, ensure_ascii=False)
+            print("💾 System prompt saved to config file")
+            return True
+        except Exception as e:
+            print(f"⚠️ Could not save config file: {e}")
+            return False
     
     def set_system_prompt(self, prompt: str) -> bool:
-        """Update the system prompt/AI guidelines."""
+        """Update the system prompt/AI guidelines and persist to file."""
         if prompt and len(prompt) > 10:
             self.system_prompt = prompt
+            self._save_config()
             return True
         return False
     

@@ -106,6 +106,15 @@ export default function ChatPage() {
                     timestamp: new Date(m.timestamp),
                     isStreaming: false,
                 }));
+
+                // Initialize displayed content immediately to prevent re-animation on reload
+                const initialContent: { [key: string]: string } = {};
+                messagesWithDates.forEach((m: Message) => {
+                    if (m.role === 'assistant') {
+                        initialContent[m.id] = m.content;
+                    }
+                });
+                setDisplayedContent(initialContent);
                 setMessages(messagesWithDates);
             } catch (e) {
                 console.error('Failed to load chat history:', e);
@@ -366,6 +375,7 @@ export default function ChatPage() {
             setConversations(prev => [newConv, ...prev]);
         }
         setMessages([]);
+        setDisplayedContent({}); // Clear displayed content for new chat
         setCurrentConversationId(null);
         setSidebarOpen(false);
     };
@@ -389,6 +399,16 @@ export default function ChatPage() {
             }
         }
         setMessages(conversation.messages);
+
+        // Initialize displayed content to prevent re-animation
+        const loadedContent: { [key: string]: string } = {};
+        conversation.messages.forEach(m => {
+            if (m.role === 'assistant') {
+                loadedContent[m.id] = m.content;
+            }
+        });
+        setDisplayedContent(loadedContent);
+
         setCurrentConversationId(conversation.id);
         setSidebarOpen(false);
         setTimeout(() => scrollToBottom(), 100);

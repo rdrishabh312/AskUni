@@ -429,6 +429,12 @@ export default function ChatPage() {
             {/* Desktop Sidebar */}
             <div className="hidden md:flex w-[280px] flex-col border-r border-white/5 bg-[#020617]/50 backdrop-blur-xl shrink-0 z-20">
                 <div className="p-4">
+                    <Link href="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20">
+                            <GraduationCap className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-xl font-bold">AskUni</span>
+                    </Link>
                     <button
                         onClick={startNewChat}
                         className="w-full py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-medium shadow-lg shadow-primary-500/20 transition-all flex items-center justify-center gap-2 group border border-white/10 hover:border-primary-400/50"
@@ -547,10 +553,10 @@ export default function ChatPage() {
                 {/* Mobile Header */}
                 <header className="md:hidden p-4 border-b border-white/5 flex items-center gap-4 bg-[#020617]/80 backdrop-blur z-30 sticky top-0">
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu className="w-6 h-6" /></button>
-                    <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <span className="font-bold text-lg">AskUni</span>
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-300 border border-primary-500/30">AI</span>
-                    </div>
+                    </Link>
                     {isTrial && <span className="ml-auto text-xs px-2 py-1 rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">{remainingMessages} left</span>}
                 </header>
 

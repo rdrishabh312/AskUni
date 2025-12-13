@@ -557,6 +557,9 @@ export default function ChatPage() {
                         <Menu className="w-5 h-5" />
                     </button>
                     <Link href="/" className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20">
+                            <GraduationCap className="w-4 h-4 text-white" />
+                        </div>
                         <span className="font-bold text-base">AskUni</span>
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-300 border border-primary-500/30">AI</span>
                     </Link>
@@ -571,13 +574,13 @@ export default function ChatPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="max-w-2xl w-full text-center space-y-10"
+                                className="max-w-2xl w-full text-center space-y-6 md:space-y-10"
                             >
                                 <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto shadow-2xl shadow-primary-500/20 rotate-3">
                                     <GraduationCap className="w-10 h-10 text-white" />
                                 </div>
 
-                                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 pb-2">
+                                <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 pb-2 px-2">
                                     How can I help you succeed today?
                                 </h1>
 
@@ -587,7 +590,7 @@ export default function ChatPage() {
                                         <button
                                             key={i}
                                             onClick={() => sendMessage(action)}
-                                            className="p-4 rounded-2xl glass-card hover:bg-white/10 transition-all text-sm text-gray-300 hover:text-white border border-white/5 hover:border-primary-500/30 shadow-lg hover:shadow-xl group"
+                                            className="p-3 rounded-xl glass-card hover:bg-white/10 transition-all text-xs sm:text-sm text-gray-300 hover:text-white border border-white/5 hover:border-primary-500/30 shadow-lg hover:shadow-xl group"
                                         >
                                             <span className="group-hover:translate-x-1 transition-transform inline-block">{action}</span>
                                         </button>

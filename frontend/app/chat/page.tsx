@@ -160,73 +160,36 @@ export default function ChatPage() {
     }, [messages, displayedContent, scrollToBottom]);
 
     /**
-     * ChatGPT-style LINE-BY-LINE Streaming Effect
-     * ============================================
-     * Creates a natural streaming animation like ChatGPT:
-     * - Text appears word-by-word as it streams from the API
-     * - Content is revealed progressively, not character-by-character
-     * - Shows the actual streaming chunks as they arrive
-     * - Blinking cursor indicates more content is coming
+     * ChatGPT-style Real-Time Streaming Effect
+     * =========================================
+     * Shows content IMMEDIATELY as it streams from the AI API.
      * 
-     * How it works:
-     * 1. During streaming: Shows content directly as it arrives from API
-     * 2. The displayedContent state trails behind actual content for smooth reveal
-     * 3. Words/lines appear in natural chunks (like how the AI generates them)
+     * Unlike artificial typewriter effects that delay already-received text,
+     * this shows the actual streaming behavior - text appears exactly as
+     * the AI generates it, word by word, line by line.
+     * 
+     * The blinking cursor is handled inline in the JSX, appearing right
+     * after the last character of the streamed content.
      */
     useEffect(() => {
-        // Find all messages that are currently being streamed
-        const streamingMessages = messages.filter(
-            m => m.role === 'assistant' && m.isStreaming && m.content
-        );
-
-        // Process each streaming message with line-by-line reveal
-        streamingMessages.forEach(msg => {
-            const targetContent = msg.content;
-            const currentDisplayed = displayedContent[msg.id] || '';
-
-            // If we haven't displayed all content yet, reveal more
-            if (currentDisplayed.length < targetContent.length) {
-                const timer = setTimeout(() => {
-                    // Find the next word boundary or newline for natural line-by-line effect
-                    // This creates the ChatGPT-like word streaming appearance
-                    let nextBreakPoint = currentDisplayed.length;
-
-                    // Look for the next space, newline, or punctuation to reveal complete words
-                    const searchStart = currentDisplayed.length;
-                    const remaining = targetContent.slice(searchStart);
-
-                    // Find next natural break point (word boundary)
-                    const wordMatch = remaining.match(/^(\S*\s*)/);
-                    if (wordMatch) {
-                        nextBreakPoint = searchStart + wordMatch[1].length;
-                    } else {
-                        // Fallback: add a few characters if no word boundary found
-                        nextBreakPoint = Math.min(searchStart + 5, targetContent.length);
-                    }
-
-                    setDisplayedContent(prev => ({
-                        ...prev,
-                        [msg.id]: targetContent.slice(0, nextBreakPoint)
-                    }));
-
-                    // Auto-scroll as new lines appear
-                    scrollToBottom();
-                }, 20); // 20ms delay for smooth word-by-word streaming
-
-                return () => clearTimeout(timer);
-            }
-        });
-
-        // When streaming stops, ensure final content is immediately complete
+        // For streaming messages: directly show the content as it arrives
+        // No artificial delay - the streaming API already provides natural pacing
         messages.forEach(msg => {
-            if (msg.role === 'assistant' && !msg.isStreaming && msg.content) {
+            if (msg.role === 'assistant' && msg.content) {
                 const currentDisplayed = displayedContent[msg.id];
+
+                // If streaming: show content directly as it arrives
+                // If not streaming: ensure final content is complete
                 if (currentDisplayed !== msg.content) {
-                    // Instantly show complete content when streaming ends
                     setDisplayedContent(prev => ({
                         ...prev,
                         [msg.id]: msg.content
                     }));
+
+                    // Auto-scroll as new content appears
+                    if (msg.isStreaming) {
+                        scrollToBottom();
+                    }
                 }
             }
         });
@@ -582,28 +545,33 @@ export default function ChatPage() {
                                             /* Assistant message with typewriter effect */
                                             <div className="space-y-4">
 
-                                                {/* Typing indicator - shows 3 bouncing dots while waiting */}
+                                                {/* Typing indicator - shows animated dots while waiting for first content */}
                                                 {message.isStreaming && !message.content && (
-                                                    <div className="flex items-center gap-2 h-6 py-2">
-                                                        <span className="typing-dot" />
-                                                        <span className="typing-dot" />
-                                                        <span className="typing-dot" />
+                                                    <div className="flex items-center gap-1.5 py-3">
+                                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                                     </div>
                                                 )}
 
-                                                {/* Message content with ChatGPT-style typing animation */}
+                                                {/* Message content with ChatGPT-style streaming */}
                                                 {message.content && (
                                                     <div className="relative">
-                                                        {/* Markdown rendered content */}
-                                                        <div
-                                                            className="chat-prose prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none"
-                                                            dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
-                                                        />
+                                                        {/* 
+                                                          Markdown rendered content with inline cursor.
+                                                          The content appears in real-time as it streams.
+                                                        */}
+                                                        <div className="chat-prose prose prose-invert prose-p:text-gray-200 prose-p:leading-relaxed prose-headings:text-gray-100 prose-headings:font-semibold prose-strong:text-white prose-strong:font-bold prose-li:text-gray-200 prose-code:text-primary-300 prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-white/10 prose-pre:text-gray-100 prose-a:text-primary-400 prose-a:underline max-w-none">
+                                                            {/* Render markdown content */}
+                                                            <span
+                                                                dangerouslySetInnerHTML={renderMarkdown(displayedContent[message.id] || message.content)}
+                                                            />
 
-                                                        {/* Blinking cursor - shows while still typing */}
-                                                        {message.isStreaming && displayedContent[message.id] && (
-                                                            <span className="typing-cursor typing-cursor-light" />
-                                                        )}
+                                                            {/* Inline blinking cursor - appears right after text while streaming */}
+                                                            {message.isStreaming && (
+                                                                <span className="inline-block w-[3px] h-[1.1em] ml-[2px] bg-white animate-pulse align-middle" />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 

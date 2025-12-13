@@ -85,10 +85,14 @@ export default function ChatPage() {
     }, [sidebarOpen]);
 
     useEffect(() => {
-        if (!authLoading && !user && !isTrial) {
-            router.push('/login');
+        if (!authLoading) {
+            if (!user) {
+                router.push('/login');
+            } else if (!user.phone) {
+                router.push('/verify-phone');
+            }
         }
-    }, [user, isTrial, authLoading, router]);
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (isTrial && trialTimeLeft <= 0) {

@@ -17,10 +17,11 @@ interface AuthContextType {
     trialTimeLeft: number;
     signInWithGoogle: () => Promise<void>;
     signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-    signUpWithEmail: (email: string, password: string, userData?: { name: string; college: string; semester: string }) => Promise<{ error: AuthError | null }>;
+    signUpWithEmail: (email: string, password: string, userData?: { name: string; college: string; semester: string; phone?: string }) => Promise<{ error: AuthError | null }>;
     signOut: () => Promise<void>;
     signInWithOtp: (phone: string) => Promise<{ error: AuthError | null }>;
     verifyOtp: (phone: string, token: string) => Promise<{ error: AuthError | null }>;
+    updatePhone: (phone: string) => Promise<{ error: AuthError | null }>;
     startTrial: () => void;
     endTrial: () => void;
 }
@@ -122,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
     };
 
-    const signUpWithEmail = async (email: string, password: string, userData?: { name: string; college: string; semester: string }) => {
+    const signUpWithEmail = async (email: string, password: string, userData?: { name: string; college: string; semester: string; phone?: string }) => {
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -155,6 +156,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             token,
             type: 'sms',
         });
+        if (!error) {
+            // refresh user session to get updated phone
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user ?? null);
+        }
+        return { error };
+    };
+
+    const updatePhone = async (phone: string) => {
+        const { error } = await supabase.auth.updateUser({
+            phone: phone
+        });
         return { error };
     };
 
@@ -184,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             signOut,
             signInWithOtp,
             verifyOtp,
+            updatePhone,
             startTrial,
             endTrial,
         }}>

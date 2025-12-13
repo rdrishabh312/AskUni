@@ -21,8 +21,12 @@ export default function VerifyPhonePage() {
             router.push('/login');
         } else if (!authLoading && user?.phone) {
             router.push('/chat');
+        } else if (user && user.user_metadata?.phone && step === 'phone') {
+            setPhone(user.user_metadata.phone);
         }
-    }, [user, authLoading, router]);
+    }, [user, authLoading, router, step]);
+
+
 
     const handleSendCode = async () => {
         if (!phone || phone.length < 10) {
@@ -42,6 +46,13 @@ export default function VerifyPhonePage() {
             setIsLoading(false);
         }
     };
+
+    // Auto-send code if phone is pre-filled from metadata
+    useEffect(() => {
+        if (user?.user_metadata?.phone && phone === user.user_metadata.phone && step === 'phone' && !isLoading) {
+            handleSendCode();
+        }
+    }, [user, phone, step, isLoading]);
 
     const handleVerify = async () => {
         if (!otp || otp.length !== 6) {
@@ -124,6 +135,13 @@ export default function VerifyPhonePage() {
                                 className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
                             >
                                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
+                            </button>
+
+                            <button
+                                onClick={() => setStep('otp')}
+                                className="w-full mt-4 text-gray-500 hover:text-white text-sm transition-colors"
+                            >
+                                I already have a code
                             </button>
                         </motion.div>
                     ) : (

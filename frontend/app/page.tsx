@@ -17,7 +17,9 @@ import {
     Menu,
     X,
     Target,
-    Heart
+    Heart,
+    User,
+    LogOut
 } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +27,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export default function HomePage() {
     const router = useRouter();
-    const { startTrial } = useAuth();
+    const { startTrial, user, signOut } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleTryFree = () => {
@@ -110,18 +112,40 @@ export default function HomePage() {
                                 <Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors font-medium">About</Link>
                                 <Link href="/contact" className="text-sm text-gray-400 hover:text-white transition-colors font-medium">Contact</Link>
                                 <div className="w-px h-4 bg-white/10"></div>
-                                <Link
-                                    href="/login"
-                                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white transition-colors"
-                                >
-                                    Sign In
-                                </Link>
-                                <Link
-                                    href="/login"
-                                    className="px-5 py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-sm shadow-lg hover:scale-105 active:scale-95"
-                                >
-                                    Sign Up Free
-                                </Link>
+
+                                {user ? (
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                            <div className="w-6 h-6 rounded-full bg-primary-500/20 flex items-center justify-center">
+                                                <User className="w-3 h-3 text-primary-400" />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-200">
+                                                {user.user_metadata?.name || 'Student'}
+                                            </span>
+                                        </div>
+                                        <Link
+                                            href="/chat"
+                                            className="px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white transition-all font-bold text-sm shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95"
+                                        >
+                                            Go to Chat
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href="/login"
+                                            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                                        >
+                                            Sign In
+                                        </Link>
+                                        <Link
+                                            href="/login"
+                                            className="px-5 py-2.5 rounded-xl bg-white text-black hover:bg-gray-100 transition-all font-bold text-sm shadow-lg hover:scale-105 active:scale-95"
+                                        >
+                                            Sign Up Free
+                                        </Link>
+                                    </>
+                                )}
                             </div>
 
                             {/* Mobile Menu Button */}
@@ -145,7 +169,35 @@ export default function HomePage() {
                                     <Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors font-medium py-2">Home</Link>
                                     <Link href="/about" className="text-sm text-gray-400 hover:text-white transition-colors font-medium py-2">About</Link>
                                     <Link href="/contact" className="text-sm text-gray-400 hover:text-white transition-colors font-medium py-2">Contact</Link>
-                                    <Link href="/login" className="text-sm text-primary-400 hover:text-primary-300 transition-colors font-medium py-2 sm:hidden">Log in</Link>
+
+                                    {user ? (
+                                        <>
+                                            <div className="py-2 border-t border-white/10 mt-2">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-8 h-8 rounded-full bg-primary-500/20 flex items-center justify-center border border-primary-500/30">
+                                                        <User className="w-4 h-4 text-primary-400" />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-white">
+                                                        {user.user_metadata?.name || 'Student'}
+                                                    </span>
+                                                </div>
+                                                <Link
+                                                    href="/chat"
+                                                    className="block w-full text-center py-2 rounded-lg bg-primary-600 text-white font-medium mb-2"
+                                                >
+                                                    Go to Chat
+                                                </Link>
+                                                <button
+                                                    onClick={() => signOut()}
+                                                    className="w-full flex items-center gap-2 text-sm text-gray-400 hover:text-white py-2"
+                                                >
+                                                    <LogOut className="w-4 h-4" /> Sign Out
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <Link href="/login" className="text-sm text-primary-400 hover:text-primary-300 transition-colors font-medium py-2 sm:hidden">Log in</Link>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -177,20 +229,33 @@ export default function HomePage() {
                             </p>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-                                <button
-                                    onClick={handleTryFree}
-                                    className="btn-primary flex items-center gap-2 group text-lg px-8 py-4"
-                                >
-                                    <Sparkles className="w-5 h-5" />
-                                    <span>Free Trial</span>
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <Link
-                                    href="/login"
-                                    className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl glass-input hover:bg-white/10 transition-all font-semibold text-base sm:text-lg flex items-center justify-center"
-                                >
-                                    Sign Up Free
-                                </Link>
+                                {user ? (
+                                    <Link
+                                        href="/chat"
+                                        className="btn-primary flex items-center justify-center gap-2 group text-lg px-8 py-4 w-full sm:w-auto"
+                                    >
+                                        <MessageSquare className="w-5 h-5" />
+                                        <span>Go to Chat</span>
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={handleTryFree}
+                                            className="btn-primary flex items-center gap-2 group text-lg px-8 py-4"
+                                        >
+                                            <Sparkles className="w-5 h-5" />
+                                            <span>Free Trial</span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                        <Link
+                                            href="/login"
+                                            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl glass-input hover:bg-white/10 transition-all font-semibold text-base sm:text-lg flex items-center justify-center"
+                                        >
+                                            Sign Up Free
+                                        </Link>
+                                    </>
+                                )}
                             </div>
 
 
@@ -313,20 +378,33 @@ export default function HomePage() {
                                 Join thousands of students using AskUni today. It&apos;s completely free.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <button
-                                    onClick={handleTryFree}
-                                    className="bg-white text-gray-900 px-10 py-5 rounded-2xl font-bold text-xl hover:bg-gray-100 transition-all flex items-center gap-3 mx-auto shadow-xl shadow-white/10 hover:shadow-2xl hover:scale-105 active:scale-95 duration-200"
-                                >
-                                    <Sparkles className="w-6 h-6 text-primary-600" />
-                                    <span>Free Trial</span>
-                                    <ArrowRight className="w-6 h-6" />
-                                </button>
-                                <Link
-                                    href="/login"
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl glass-input hover:bg-white/10 text-white font-bold text-base sm:text-lg"
-                                >
-                                    Sign Up Free
-                                </Link>
+                                {user ? (
+                                    <Link
+                                        href="/chat"
+                                        className="bg-white text-gray-900 px-10 py-5 rounded-2xl font-bold text-xl hover:bg-gray-100 transition-all flex items-center gap-3 mx-auto shadow-xl shadow-white/10 hover:shadow-2xl hover:scale-105 active:scale-95 duration-200"
+                                    >
+                                        <MessageSquare className="w-6 h-6 text-primary-600" />
+                                        <span>Go to Chat</span>
+                                        <ArrowRight className="w-6 h-6" />
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={handleTryFree}
+                                            className="bg-white text-gray-900 px-10 py-5 rounded-2xl font-bold text-xl hover:bg-gray-100 transition-all flex items-center gap-3 mx-auto shadow-xl shadow-white/10 hover:shadow-2xl hover:scale-105 active:scale-95 duration-200"
+                                        >
+                                            <Sparkles className="w-6 h-6 text-primary-600" />
+                                            <span>Free Trial</span>
+                                            <ArrowRight className="w-6 h-6" />
+                                        </button>
+                                        <Link
+                                            href="/login"
+                                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 rounded-2xl glass-input hover:bg-white/10 text-white font-bold text-base sm:text-lg"
+                                        >
+                                            Sign Up Free
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </motion.div>
                     </div>

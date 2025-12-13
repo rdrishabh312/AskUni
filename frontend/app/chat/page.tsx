@@ -160,36 +160,60 @@ export default function ChatPage() {
     }, [messages, displayedContent, scrollToBottom]);
 
     /**
-     * ChatGPT-style Real-Time Streaming Effect
-     * =========================================
-     * Shows content IMMEDIATELY as it streams from the AI API.
+     * ChatGPT-style LINE-BY-LINE Streaming Effect
+     * ============================================
+     * Creates a smooth, natural streaming animation like ChatGPT:
      * 
-     * Unlike artificial typewriter effects that delay already-received text,
-     * this shows the actual streaming behavior - text appears exactly as
-     * the AI generates it, word by word, line by line.
+     * 1. As content streams from the API, we receive chunks of text
+     * 2. We display content word-by-word with a subtle delay
+     * 3. This creates the "line by line" appearance users expect
+     * 4. The blinking cursor shows where new content is appearing
      * 
-     * The blinking cursor is handled inline in the JSX, appearing right
-     * after the last character of the streamed content.
+     * The effect trails slightly behind the actual content, revealing
+     * words progressively for that natural ChatGPT feel.
      */
     useEffect(() => {
-        // For streaming messages: directly show the content as it arrives
-        // No artificial delay - the streaming API already provides natural pacing
+        // Process all assistant messages
         messages.forEach(msg => {
             if (msg.role === 'assistant' && msg.content) {
-                const currentDisplayed = displayedContent[msg.id];
+                const targetContent = msg.content;
+                const currentDisplayed = displayedContent[msg.id] || '';
 
-                // If streaming: show content directly as it arrives
-                // If not streaming: ensure final content is complete
-                if (currentDisplayed !== msg.content) {
+                // If we're still streaming and have more content to show
+                if (msg.isStreaming && currentDisplayed.length < targetContent.length) {
+                    // Reveal content word-by-word for natural line-by-line effect
+                    const timer = setTimeout(() => {
+                        // Find the next word boundary (space or newline)
+                        let nextStop = currentDisplayed.length;
+                        const remaining = targetContent.slice(currentDisplayed.length);
+
+                        // Match word + trailing whitespace for natural word-by-word reveal
+                        const wordMatch = remaining.match(/^(\S*\s*)/);
+                        if (wordMatch && wordMatch[1]) {
+                            nextStop = currentDisplayed.length + wordMatch[1].length;
+                        } else {
+                            // Fallback: reveal a few characters
+                            nextStop = Math.min(currentDisplayed.length + 3, targetContent.length);
+                        }
+
+                        setDisplayedContent(prev => ({
+                            ...prev,
+                            [msg.id]: targetContent.slice(0, nextStop)
+                        }));
+
+                        // Auto-scroll as new lines appear
+                        scrollToBottom();
+                    }, 25); // 25ms delay for smooth word-by-word streaming
+
+                    return () => clearTimeout(timer);
+                }
+
+                // When streaming stops, immediately show all remaining content
+                if (!msg.isStreaming && currentDisplayed !== targetContent) {
                     setDisplayedContent(prev => ({
                         ...prev,
-                        [msg.id]: msg.content
+                        [msg.id]: targetContent
                     }));
-
-                    // Auto-scroll as new content appears
-                    if (msg.isStreaming) {
-                        scrollToBottom();
-                    }
                 }
             }
         });

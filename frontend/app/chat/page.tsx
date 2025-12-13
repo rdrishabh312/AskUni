@@ -47,11 +47,11 @@ interface Conversation {
 const TRIAL_MESSAGE_LIMIT = 5; // 5 conversations for trial
 
 const quickActions = [
-    "Help me with course registration",
-    "What are admission requirements?",
-    "Tell me about campus events",
-    "Explain university policies",
-    "Academic calendar info"
+    "How can I take admission in Vidya University?",
+    "What are the placement statistics?",
+    "Tell me about B.Tech CSE program",
+    "Where is Vidya University located?",
+    "Information about hostels and facilities"
 ];
 
 export default function ChatPage() {

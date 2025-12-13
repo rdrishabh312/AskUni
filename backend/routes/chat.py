@@ -9,7 +9,9 @@ from typing import List, Optional
 import json
 
 from services.ollama_service import ollama_service
+from services.ollama_service import ollama_service
 from services.web_scraper import web_scraper
+from services.supabase_service import supabase_service
 
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
@@ -25,7 +27,9 @@ class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     messages: List[Message]
     enable_web_search: bool = False
+    enable_web_search: bool = False
     search_query: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -71,6 +75,16 @@ async def chat(request: ChatRequest):
         # Get AI response
         response = await ollama_service.chat(messages, context)
         
+        # Log to Supabase
+        if request.user_id:
+            # Log user message (last one)
+            last_user_msg = next((m for m in reversed(messages) if m["role"] == "user"), None)
+            if last_user_msg:
+                supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", ollama_service.model)
+            
+            # Log assistant response
+            supabase_service.log_chat(request.user_id, response, "assistant", ollama_service.model)
+        
         return ChatResponse(response=response, sources=sources)
     
     except Exception as e:
@@ -107,10 +121,26 @@ async def chat_stream(request: ChatRequest):
                     # Send sources first
                     if sources:
                         yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n"
+                        sources_sent = True
             
-            # Stream AI response
+            # Stream response
+            full_response = ""
             async for chunk in ollama_service.chat_stream(messages, context):
-                yield f"data: {json.dumps({'type': 'content', 'data': chunk})}\n\n"
+                if chunk:
+                    full_response += chunk
+                    yield f"data: {json.dumps({'response': chunk, 'sources': sources if not sources_sent else None})}\n\n"
+                    sources_sent = True # Mark sources as sent if they were included with the first chunk
+            
+            # Log complete interaction
+            if request.user_id:
+                # Log user message
+                last_user_msg = next((m for m in reversed(messages) if m["role"] == "user"), None)
+                if last_user_msg:
+                    supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", ollama_service.model)
+                
+                # Log assistant response
+                if full_response:
+                    supabase_service.log_chat(request.user_id, full_response, "assistant", ollama_service.model)
             
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             

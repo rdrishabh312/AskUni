@@ -17,15 +17,17 @@ import {
     BookOpen,
     AlertCircle,
     Check,
-    Loader2
+    Loader2,
+    Phone,
+    Smartphone
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
-type Step = 'welcome' | 'details' | 'email' | 'password' | 'complete';
+type Step = 'welcome' | 'details' | 'email' | 'password' | 'phone' | 'otp' | 'complete';
 
 export default function LoginPage() {
     const router = useRouter();
-    const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, isLoading: authLoading } = useAuth();
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithOtp, verifyOtp, user, isLoading: authLoading } = useAuth();
 
     const [step, setStep] = useState<Step>('welcome');
     const [isSignUp, setIsSignUp] = useState(false);
@@ -37,7 +39,9 @@ export default function LoginPage() {
         semester: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        phone: '',
+        otp: ''
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -162,6 +166,42 @@ export default function LoginPage() {
         }
     };
 
+    const handlePhoneSignIn = async () => {
+        if (!formData.phone || formData.phone.length < 10) {
+            setError('Please enter a valid phone number');
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+        try {
+            const { error } = await signInWithOtp(formData.phone);
+            if (error) throw error;
+            setStep('otp');
+        } catch {
+            setError('Failed to send OTP. Try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!formData.otp || formData.otp.length !== 6) {
+            setError('Please enter the 6-digit code');
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+        try {
+            const { error } = await verifyOtp(formData.phone, formData.otp);
+            if (error) throw error;
+            router.push('/chat');
+        } catch {
+            setError('Invalid code. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const goBack = () => {
         setError('');
         setSuccessMessage('');
@@ -190,8 +230,16 @@ export default function LoginPage() {
                     semester: '',
                     email: '',
                     password: '',
-                    confirmPassword: ''
+                    confirmPassword: '',
+                    phone: '',
+                    otp: ''
                 });
+                break;
+            case 'otp':
+                setStep('phone');
+                break;
+            case 'phone':
+                setStep('welcome');
                 break;
             default:
                 setStep('welcome');
@@ -255,10 +303,19 @@ export default function LoginPage() {
                             {/* Login */}
                             <button
                                 onClick={() => { setStep('email'); setIsSignUp(false); setError(''); }}
-                                className="w-full mb-6 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 hover:bg-white/5 transition-all font-bold text-gray-300 hover:text-white flex items-center justify-center gap-2"
+                                className="w-full mb-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 hover:bg-white/5 transition-all font-bold text-gray-300 hover:text-white flex items-center justify-center gap-2"
                             >
                                 <User className="w-5 h-5" />
-                                <span>Sign In to Existing Account</span>
+                                <span>Sign In with Email</span>
+                            </button>
+
+                            {/* Phone Login */}
+                            <button
+                                onClick={() => { setStep('phone'); setError(''); }}
+                                className="w-full mb-6 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 hover:bg-white/5 transition-all font-bold text-gray-300 hover:text-white flex items-center justify-center gap-2"
+                            >
+                                <Smartphone className="w-5 h-5" />
+                                <span>Sign In with Phone</span>
                             </button>
 
                             {/* Divider */}
@@ -545,6 +602,109 @@ export default function LoginPage() {
                             </button>
                         </motion.div>
                     )}
+
+
+                    {/* Step: Phone Input */}
+                    {step === 'phone' && (
+                        <motion.div
+                            key="phone"
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            className="glass-card p-8"
+                        >
+                            <button onClick={goBack} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors">
+                                <ArrowLeft className="w-4 h-4" />
+                                Back
+                            </button>
+
+                            <h2 className="text-2xl font-bold mb-2">Sign in with Phone</h2>
+                            <p className="text-gray-400 text-sm mb-6">We'll send you a verification code</p>
+
+                            {error && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm text-gray-300 mb-2">Phone Number</label>
+                                <div className="relative">
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        placeholder="+1 234 567 8900"
+                                        className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handlePhoneSignIn}
+                                disabled={isLoading}
+                                className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {/* Step: OTP Input */}
+                    {step === 'otp' && (
+                        <motion.div
+                            key="otp"
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            className="glass-card p-8"
+                        >
+                            <button onClick={goBack} className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors">
+                                <ArrowLeft className="w-4 h-4" />
+                                Back
+                            </button>
+
+                            <h2 className="text-2xl font-bold mb-2">Enter Verification Code</h2>
+                            <p className="text-gray-400 text-sm mb-6">Sent to {formData.phone}</p>
+
+                            {error && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm text-gray-300 mb-2">6-Digit Code</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        name="otp"
+                                        value={formData.otp}
+                                        onChange={handleChange}
+                                        placeholder="123456"
+                                        className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none tracking-widest text-lg"
+                                        maxLength={6}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleVerifyOtp}
+                                disabled={isLoading}
+                                className="w-full btn-primary mt-8 flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Verify & Sign In <ArrowRight className="w-4 h-4" /></>}
+                            </button>
+                        </motion.div>
+                    )}
+
                 </AnimatePresence>
 
                 {/* Back to Home */}

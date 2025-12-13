@@ -9,6 +9,7 @@ import {
     RefreshCw,
     Play,
     ArrowLeft,
+    ArrowRight,
     CheckCircle,
     XCircle,
     MessageSquare,
@@ -53,8 +54,11 @@ export default function AdminPage() {
     const [systemPrompt, setSystemPrompt] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [users, setUsers] = useState<UserData[]>([]);
+    const [userCount, setUserCount] = useState(0);
     const [usersLoading, setUsersLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'ai'>('overview');
+    const [chatLogs, setChatLogs] = useState<any[]>([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'ai' | 'logs'>('overview');
 
     const API_URL = 'http://localhost:8000';
 
@@ -88,32 +92,34 @@ export default function AdminPage() {
     const fetchUsers = async () => {
         setUsersLoading(true);
         try {
-            // Note: In production, you'd need a backend endpoint for this
-            // This is a simplified version for demo
-            const { data, error } = await supabase.auth.admin.listUsers();
-            if (!error && data) {
-                setUsers(data.users.map(u => ({
-                    id: u.id,
-                    email: u.email || 'No email',
-                    created_at: u.created_at,
-                    last_sign_in_at: u.last_sign_in_at || 'Never',
-                })));
-            }
+            const res = await fetch(`${API_URL}/api/admin/users/count`);
+            const data = await res.json();
+            setUserCount(data.count || 0);
         } catch {
-            // Fallback: show current user info if admin API not available
-            if (user) {
-                setUsers([{
-                    id: user.id,
-                    email: user.email || 'No email',
-                    created_at: user.created_at || new Date().toISOString(),
-                    last_sign_in_at: new Date().toISOString(),
-                }]);
-            }
-            console.error('Admin API not available - showing limited data');
+            console.error('Failed to fetch user count');
         } finally {
             setUsersLoading(false);
         }
     };
+
+    const fetchChatLogs = async () => {
+        setLogsLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/admin/chats/logs`);
+            const data = await res.json();
+            setChatLogs(data.logs || []);
+        } catch {
+            console.error('Failed to fetch chat logs');
+        } finally {
+            setLogsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'logs') {
+            fetchChatLogs();
+        }
+    }, [activeTab]);
 
     const testModel = async () => {
         if (!testPrompt.trim()) return;
@@ -367,57 +373,38 @@ export default function AdminPage() {
                             Registered Users
                         </h2>
 
-                        <p className="text-gray-400 text-sm mb-4">
-                            View all users who have signed up. For full user management, visit your{' '}
-                            <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline">
-                                Supabase Dashboard
-                            </a>.
+                        <p className="text-gray-400 text-sm mb-6">
+                            Total number of users who have signed up. For detailed user management, visit the Supabase Dashboard.
                         </p>
 
-                        {usersLoading ? (
-                            <div className="flex items-center justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+                                <div className="p-3 bg-primary-500/20 rounded-full mb-3 text-primary-400">
+                                    <Users className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-gray-400 font-medium mb-1">Total Users</h3>
+                                {usersLoading ? (
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                                ) : (
+                                    <span className="text-4xl font-bold text-white">{userCount}</span>
+                                )}
                             </div>
-                        ) : users.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-white/10">
-                                            <th className="text-left py-3 px-4 text-gray-400 font-medium">Email</th>
-                                            <th className="text-left py-3 px-4 text-gray-400 font-medium">Created</th>
-                                            <th className="text-left py-3 px-4 text-gray-400 font-medium">Last Sign In</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map(u => (
-                                            <tr key={u.id} className="border-b border-white/5 hover:bg-white/5">
-                                                <td className="py-3 px-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Mail className="w-4 h-4 text-gray-500" />
-                                                        <span>{u.email}</span>
-                                                        {u.email === DEVELOPER_EMAIL && (
-                                                            <span className="px-2 py-0.5 rounded-full bg-primary-500/20 text-primary-400 text-xs">Admin</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-4 text-gray-400">
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="w-4 h-4" />
-                                                        {formatDate(u.created_at)}
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-4 text-gray-400">{formatDate(u.last_sign_in_at)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-gray-400">
-                                <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>No users found</p>
-                            </div>
-                        )}
+
+                            <a
+                                href="https://supabase.com/dashboard"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-white/10 transition-colors group"
+                            >
+                                <div className="p-3 bg-green-500/20 rounded-full mb-3 text-green-400 group-hover:scale-110 transition-transform">
+                                    <Shield className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-gray-400 font-medium mb-1">Manage Users</h3>
+                                <span className="text-sm text-green-400 flex items-center gap-1">
+                                    Go to Supabase <ArrowRight className="w-3 h-3" />
+                                </span>
+                            </a>
+                        </div>
                     </motion.div>
                 )}
 

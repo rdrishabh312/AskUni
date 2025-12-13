@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     max_search_results: int = 5
     scrape_timeout: int = 10
     
+    # Supabase (Database)
+    supabase_url: str = ""
+    supabase_key: str = ""
+    pass
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

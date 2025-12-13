@@ -8,6 +8,7 @@ from typing import Optional, List
 from datetime import datetime
 
 from services.ollama_service import ollama_service
+from services.supabase_service import supabase_service
 
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
@@ -98,9 +99,23 @@ async def get_stats():
         status=health.get("status", "unknown"),
         current_model=health.get("current_model", "unknown"),
         ollama_host=health.get("ollama_host", "unknown"),
-        available_models=health.get("available_models", 0),
+        available_models=len(ollama_service.list_models()),
         timestamp=datetime.now().isoformat()
     )
+
+
+@router.get("/users/count")
+async def get_user_count():
+    """Get total number of users."""
+    count = await supabase_service.get_user_count()
+    return {"count": count}
+
+
+@router.get("/chats/logs")
+async def get_chat_logs(limit: int = 50):
+    """Get recent chat logs."""
+    logs = await supabase_service.get_recent_chats(limit)
+    return {"logs": logs}
 
 
 @router.post("/test")

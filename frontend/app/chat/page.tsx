@@ -166,57 +166,82 @@ export default function ChatPage() {
      * 
      * 1. As content streams from the API, we receive chunks of text
      * 2. We display content word-by-word with a subtle delay
-     * 3. This creates the "line by line" appearance users expect
-     * 4. The blinking cursor shows where new content is appearing
-     * 
-     * The effect trails slightly behind the actual content, revealing
-     * words progressively for that natural ChatGPT feel.
+    /**
+     * ROBUST TYPING ANIMATION LOOP
+     * ============================
+     * Uses a stable "Game Loop" pattern via setInterval to handle typing animation.
+     * This decouples the animation from the message update frequency, preventing
+     * stuttering or freezing when the server streams data very quickly.
      */
     useEffect(() => {
-        // Process all assistant messages
-        messages.forEach(msg => {
-            if (msg.role === 'assistant' && msg.content) {
-                const targetContent = msg.content;
-                const currentDisplayed = displayedContent[msg.id] || '';
+        // Run the animation loop every 15ms
+        const intervalId = setInterval(() => {
+            setDisplayedContent(prev => {
+                let hasUpdates = false;
+                const nextState = { ...prev };
 
-                // If we're still streaming and have more content to show
-                if (msg.isStreaming && currentDisplayed.length < targetContent.length) {
-                    // Reveal content word-by-word for natural line-by-line effect
-                    const timer = setTimeout(() => {
-                        // Find the next word boundary (space or newline)
-                        let nextStop = currentDisplayed.length;
-                        const remaining = targetContent.slice(currentDisplayed.length);
+                messages.forEach(msg => {
+                    // Only process assistant messages with content
+                    if (msg.role !== 'assistant' || !msg.content) return;
 
-                        // Match word + trailing whitespace for natural word-by-word reveal
-                        const wordMatch = remaining.match(/^(\S*\s*)/);
-                        if (wordMatch && wordMatch[1]) {
-                            nextStop = currentDisplayed.length + wordMatch[1].length;
-                        } else {
-                            // Fallback: reveal a few characters
-                            nextStop = Math.min(currentDisplayed.length + 3, targetContent.length);
+                    const targetContent = msg.content;
+                    const current = prev[msg.id] || '';
+
+                    // optimization: if already fully displayed, skip
+                    if (current.length >= targetContent.length) {
+                        // Double check we are functionally equal (handles cases where content changed completely)
+                        if (current !== targetContent && !msg.isStreaming) {
+                            nextState[msg.id] = targetContent;
+                            hasUpdates = true;
                         }
+                        return;
+                    }
 
-                        setDisplayedContent(prev => ({
-                            ...prev,
-                            [msg.id]: targetContent.slice(0, nextStop)
-                        }));
+                    // CALCULATE NEXT CHUNK
+                    // We want a smooth word-by-word streaming effect
+                    let nextLength = current.length;
 
-                        // Auto-scroll as new lines appear
-                        scrollToBottom();
-                    }, 25); // 25ms delay for smooth word-by-word streaming
+                    // Look ahead in the target string
+                    const remaining = targetContent.slice(current.length);
 
-                    return () => clearTimeout(timer);
-                }
+                    // 1. Try to find the next word boundary (space/newline)
+                    const wordMatch = remaining.match(/^(\S+\s*)/);
 
-                // When streaming stops, immediately show all remaining content
-                if (!msg.isStreaming && currentDisplayed !== targetContent) {
-                    setDisplayedContent(prev => ({
-                        ...prev,
-                        [msg.id]: targetContent
-                    }));
-                }
-            }
-        });
+                    if (wordMatch) {
+                        // Found a complete word - add it all
+                        nextLength += wordMatch[1].length;
+                    } else {
+                        // No complete word found yet (or end of string)
+                        // Add character-by-character (faster for long blocks)
+                        // Add up to 3 chars to catch up if falling behind, or just 1 for smoothness
+                        const charsToAdd = remaining.length > 50 ? 5 : 2;
+                        nextLength = Math.min(targetContent.length, current.length + charsToAdd);
+                    }
+
+                    if (nextLength !== current.length) {
+                        nextState[msg.id] = targetContent.slice(0, nextLength);
+                        hasUpdates = true;
+                    }
+                });
+
+                return hasUpdates ? nextState : prev;
+            });
+        }, 30); // 30ms tick rate (approx 33fps) for reading comfort
+
+        return () => clearInterval(intervalId);
+    }, [messages]);
+
+    // Separate effect for auto-scrolling to keep it performant
+    // Only scroll when the displayed text length changes significantly
+    useEffect(() => {
+        if (messages.some(m => m.isStreaming)) {
+            // Throttled scroll for performance
+            const timer = setTimeout(() => scrollToBottom(), 50);
+            return () => clearTimeout(timer);
+        } else {
+            // Immediate scroll when not streaming (e.g. on load)
+            scrollToBottom();
+        }
     }, [messages, displayedContent, scrollToBottom]);
 
     const sendMessage = async (text?: string) => {

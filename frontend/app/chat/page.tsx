@@ -551,13 +551,16 @@ export default function ChatPage() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-full min-w-0 relative bg-gradient-to-br from-[#020617] to-[#0b1221]">
                 {/* Mobile Header */}
-                <header className="md:hidden p-4 border-b border-white/5 flex items-center gap-4 bg-[#020617]/80 backdrop-blur z-30 sticky top-0">
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu className="w-6 h-6" /></button>
+                {/* Mobile Header - Compact & Sticky */}
+                <header className="md:hidden p-3 border-b border-white/5 flex items-center gap-3 bg-[#020617]/90 backdrop-blur-xl z-50 sticky top-0 shadow-sm">
+                    <button onClick={() => setSidebarOpen(true)} className="p-1.5 -ml-1 text-gray-400 hover:text-white active:scale-95 transition-transform">
+                        <Menu className="w-5 h-5" />
+                    </button>
                     <Link href="/" className="flex items-center gap-2">
-                        <span className="font-bold text-lg">AskUni</span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-300 border border-primary-500/30">AI</span>
+                        <span className="font-bold text-base">AskUni</span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gradient-to-r from-primary-500/20 to-accent-500/20 text-primary-300 border border-primary-500/30">AI</span>
                     </Link>
-                    {isTrial && <span className="ml-auto text-xs px-2 py-1 rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">{remainingMessages} left</span>}
+                    {isTrial && <span className="ml-auto text-[10px] px-2 py-1 rounded-full bg-primary-500/10 text-primary-300 border border-primary-500/20">{remainingMessages} left</span>}
                 </header>
 
                 {/* Messages Area - SCROLLABLE with smooth scroll behavior */}
@@ -728,9 +731,10 @@ export default function ChatPage() {
                 </div>
 
                 {/* Fixed Input Area - OUTSIDE SCROLL */}
-                <div className="p-4 md:p-6 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 z-20 shrink-0">
+                {/* Fixed Input Area - Compact for mobile */}
+                <div className="p-3 md:p-6 bg-[#020617]/95 backdrop-blur-xl border-t border-white/5 z-40 shrink-0">
                     <div className="max-w-3xl mx-auto">
-                        <div className="relative glass-card p-1.5 rounded-[26px] border-white/10 bg-[#0f172a] shadow-2xl transition-all focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500/30">
+                        <div className="relative glass-card p-1 md:p-1.5 rounded-[20px] md:rounded-[26px] border-white/10 bg-[#0f172a] shadow-2xl transition-all focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500/30">
                             <textarea
                                 ref={inputRef}
                                 value={inputValue}
@@ -738,37 +742,32 @@ export default function ChatPage() {
                                 onKeyDown={handleKeyPress}
                                 placeholder={isTrial && !user ? `Ask a question (${remainingMessages} free left)...` : "Message AskUni..."}
                                 rows={1}
-                                className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3.5 pl-5 pr-14 text-white placeholder-gray-500 min-h-[56px] max-h-[200px]"
-                                style={{ height: 'auto', minHeight: '56px' }}
+                                className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none resize-none py-3 pl-4 pr-12 md:pl-5 md:pr-14 text-sm md:text-base text-white placeholder-gray-500 min-h-[48px] md:min-h-[56px] max-h-[150px] md:max-h-[200px]"
+                                style={{ height: 'auto', minHeight: '48px' }}
                             />
                             <button
                                 onClick={() => sendMessage()}
                                 disabled={!inputValue.trim() || isLoading}
-                                className="absolute right-2 bottom-2 w-10 h-10 rounded-full bg-white text-black disabled:opacity-30 disabled:bg-gray-600 hover:bg-gray-200 transition-colors flex items-center justify-center shadow-lg"
+                                className="absolute right-1.5 bottom-1.5 md:right-2 md:bottom-2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-white text-black disabled:opacity-30 disabled:bg-gray-600 hover:bg-gray-200 transition-colors flex items-center justify-center shadow-lg"
                             >
-                                <ArrowUp className="w-5 h-5" />
+                                <ArrowUp className="w-4 h-4 md:w-5 md:h-5" />
                             </button>
                         </div>
-
-                        <div className="text-center mt-3 space-y-2">
-                            <div className="flex items-center justify-center gap-2 text-[11px] text-gray-400 font-medium">
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <span>AI can make mistakes. Please verify important information.</span>
-                            </div>
-
-                            {isTrial && (
-                                <div className="flex items-center justify-center text-[10px] text-gray-500">
-                                    <span className="px-2 py-0.5 rounded-full bg-primary-900/20 border border-primary-500/20 text-primary-400">
-                                        {remainingMessages} free conversations
-                                    </span>
-                                </div>
-                            )}
+                        <div className="mt-2 text-center">
+                            <p className="text-[10px] md:text-xs text-gray-600">
+                                AI can make mistakes. Verify important info.
+                            </p>
                         </div>
+                        {isTrial && (
+                            <div className="flex items-center justify-center text-[10px] text-gray-500 mt-2">
+                                <span className="px-2 py-0.5 rounded-full bg-primary-900/20 border border-primary-500/20 text-primary-400">
+                                    {remainingMessages} free conversations
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

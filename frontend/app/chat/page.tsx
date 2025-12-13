@@ -160,13 +160,18 @@ export default function ChatPage() {
     }, [messages, displayedContent, scrollToBottom]);
 
     /**
-     * ChatGPT-style Typewriter Effect
-     * ================================
-     * Creates a smooth character-by-character typing animation:
-     * - Displays text progressively like someone is typing
-     * - Uses variable speed based on content length for natural feel
-     * - Automatically scrolls as new content appears
-     * - Shows blinking cursor while streaming (handled in JSX)
+     * ChatGPT-style LINE-BY-LINE Streaming Effect
+     * ============================================
+     * Creates a natural streaming animation like ChatGPT:
+     * - Text appears word-by-word as it streams from the API
+     * - Content is revealed progressively, not character-by-character
+     * - Shows the actual streaming chunks as they arrive
+     * - Blinking cursor indicates more content is coming
+     * 
+     * How it works:
+     * 1. During streaming: Shows content directly as it arrives from API
+     * 2. The displayedContent state trails behind actual content for smooth reveal
+     * 3. Words/lines appear in natural chunks (like how the AI generates them)
      */
     useEffect(() => {
         // Find all messages that are currently being streamed
@@ -174,40 +179,50 @@ export default function ChatPage() {
             m => m.role === 'assistant' && m.isStreaming && m.content
         );
 
-        // Process each streaming message
+        // Process each streaming message with line-by-line reveal
         streamingMessages.forEach(msg => {
             const targetContent = msg.content;
             const currentDisplayed = displayedContent[msg.id] || '';
 
-            // If we haven't displayed all characters yet, continue typing
+            // If we haven't displayed all content yet, reveal more
             if (currentDisplayed.length < targetContent.length) {
                 const timer = setTimeout(() => {
-                    // Add 1-2 characters at a time for smooth, natural typing
-                    // Faster for longer content, slower for short responses
-                    const charsToAdd = targetContent.length > 500 ? 2 : 1;
-                    const newLength = Math.min(
-                        currentDisplayed.length + charsToAdd,
-                        targetContent.length
-                    );
+                    // Find the next word boundary or newline for natural line-by-line effect
+                    // This creates the ChatGPT-like word streaming appearance
+                    let nextBreakPoint = currentDisplayed.length;
+
+                    // Look for the next space, newline, or punctuation to reveal complete words
+                    const searchStart = currentDisplayed.length;
+                    const remaining = targetContent.slice(searchStart);
+
+                    // Find next natural break point (word boundary)
+                    const wordMatch = remaining.match(/^(\S*\s*)/);
+                    if (wordMatch) {
+                        nextBreakPoint = searchStart + wordMatch[1].length;
+                    } else {
+                        // Fallback: add a few characters if no word boundary found
+                        nextBreakPoint = Math.min(searchStart + 5, targetContent.length);
+                    }
 
                     setDisplayedContent(prev => ({
                         ...prev,
-                        [msg.id]: targetContent.slice(0, newLength)
+                        [msg.id]: targetContent.slice(0, nextBreakPoint)
                     }));
 
-                    // Auto-scroll as content appears
+                    // Auto-scroll as new lines appear
                     scrollToBottom();
-                }, 15); // 15ms delay for smooth animation (~66 chars/second)
+                }, 20); // 20ms delay for smooth word-by-word streaming
 
                 return () => clearTimeout(timer);
             }
         });
 
-        // When streaming stops, ensure final content is complete
+        // When streaming stops, ensure final content is immediately complete
         messages.forEach(msg => {
             if (msg.role === 'assistant' && !msg.isStreaming && msg.content) {
                 const currentDisplayed = displayedContent[msg.id];
                 if (currentDisplayed !== msg.content) {
+                    // Instantly show complete content when streaming ends
                     setDisplayedContent(prev => ({
                         ...prev,
                         [msg.id]: msg.content

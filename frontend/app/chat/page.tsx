@@ -85,12 +85,8 @@ export default function ChatPage() {
     }, [sidebarOpen]);
 
     useEffect(() => {
-        if (!authLoading) {
-            if (!user) {
-                router.push('/login');
-            } else if (!user.phone) {
-                router.push('/verify-phone');
-            }
+        if (!authLoading && !user) {
+            router.push('/login');
         }
     }, [user, authLoading, router]);
 

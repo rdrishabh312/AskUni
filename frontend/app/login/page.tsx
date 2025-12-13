@@ -84,8 +84,8 @@ export default function LoginPage() {
     };
 
     const handleDetailsContinue = () => {
-        if (!formData.name.trim() || !formData.college.trim() || !formData.semester.trim() || !formData.phone.trim()) {
-            setError('Please fill in all fields including phone number');
+        if (!formData.name.trim() || !formData.college.trim() || !formData.semester.trim()) {
+            setError('Please fill in all fields');
             return;
         }
         setStep('email');
@@ -124,8 +124,7 @@ export default function LoginPage() {
                     {
                         name: formData.name,
                         college: formData.college,
-                        semester: formData.semester,
-                        phone: formData.phone // Save phone to metadata if supported, or we just rely on them verifying later.
+                        semester: formData.semester
                     }
                 );
 
@@ -422,21 +421,6 @@ export default function LoginPage() {
                                             placeholder="e.g. 4th Semester"
                                             className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
                                             onKeyDown={(e) => e.key === 'Enter' && handleDetailsContinue()}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-300 mb-2">Phone Number</label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleDetailsContinue()}
-                                            placeholder="+1 234 567 8900"
-                                            className="w-full glass-input rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none"
                                         />
                                     </div>
                                 </div>

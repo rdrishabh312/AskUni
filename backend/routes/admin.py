@@ -151,10 +151,9 @@ async def get_config():
     """
     Get current AI configuration.
     """
-    return {
         "model": ollama_service.model,
         "system_prompt": ollama_service.system_prompt,
-        "ollama_host": ollama_service.client._client.base_url
+        "ollama_host": settings.ollama_host
     }
 
 

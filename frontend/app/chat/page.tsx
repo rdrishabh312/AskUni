@@ -85,10 +85,10 @@ export default function ChatPage() {
     }, [sidebarOpen]);
 
     useEffect(() => {
-        if (!authLoading && !user) {
+        if (!authLoading && !user && !isTrial) {
             router.push('/login');
         }
-    }, [user, authLoading, router]);
+    }, [user, isTrial, authLoading, router]);
 
     useEffect(() => {
         if (isTrial && trialTimeLeft <= 0) {
@@ -302,7 +302,7 @@ export default function ChatPage() {
                         role: m.role,
                         content: m.content,
                     })),
-                    enable_web_search: false,
+                    enable_web_search: true,
                 }),
             });
 
@@ -339,6 +339,14 @@ export default function ChatPage() {
                             } else if (data.type === 'done') {
                                 setMessages(prev => prev.map(m =>
                                     m.id === assistantId ? { ...m, isStreaming: false } : m
+                                ));
+                            } else if (data.type === 'error') {
+                                setMessages(prev => prev.map(m =>
+                                    m.id === assistantId ? {
+                                        ...m,
+                                        content: `⚠️ Error: ${data.data || 'Unknown error occurred'}`,
+                                        isStreaming: false
+                                    } : m
                                 ));
                             }
                         } catch { }

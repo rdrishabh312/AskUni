@@ -12,9 +12,12 @@ import {
     ArrowRight,
     CheckCircle,
     XCircle,
+    Trash2,
     MessageSquare,
     Shield,
     Save,
+    Edit,
+    Plus,
     Users,
     Mail,
     Clock,
@@ -58,14 +61,32 @@ export default function AdminPage() {
     const [usersLoading, setUsersLoading] = useState(false);
     const [chatLogs, setChatLogs] = useState<any[]>([]);
     const [logsLoading, setLogsLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'ai' | 'logs'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'ai' | 'logs' | 'data'>('overview');
+    const [knowledgeEntries, setKnowledgeEntries] = useState<any[]>([]);
+    const [dataLoading, setDataLoading] = useState(false);
+
+    // Scraper Data Modal State
+    const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+    const [editingEntry, setEditingEntry] = useState<any>(null);
+    const [entryForm, setEntryForm] = useState({ query: '', title: '', url: '', content: '' });
 
     const API_URL = 'http://localhost:8000';
 
     // Check if user is developer
     useEffect(() => {
-        if (!authLoading && (!user || user.email !== DEVELOPER_EMAIL)) {
-            router.push('/chat');
+        if (!authLoading) {
+            console.log('Current User:', user);
+            console.log('User Email:', user?.email);
+            console.log('Developer Email:', DEVELOPER_EMAIL);
+
+            const isDev = user?.email?.trim().toLowerCase() === DEVELOPER_EMAIL.trim().toLowerCase();
+            console.log('Is Developer?', isDev);
+
+            if (!user || !isDev) {
+                // Only redirect if NOT developer
+                // router.push('/chat'); // Temporarily disable redirect to see logs if needed
+                if (!isDev && user) alert(`Access Denied. You are logged in as: ${user.email}`);
+            }
         }
     }, [user, authLoading, router]);
 
@@ -118,8 +139,86 @@ export default function AdminPage() {
     useEffect(() => {
         if (activeTab === 'logs') {
             fetchChatLogs();
+        } else if (activeTab === 'data') {
+            fetchKnowledgeBase();
         }
     }, [activeTab]);
+
+    const fetchKnowledgeBase = async () => {
+        setDataLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/admin/knowledge`);
+            const data = await res.json();
+            setKnowledgeEntries(data.entries || []);
+        } catch {
+            console.error('Failed to fetch knowledge base');
+        } finally {
+            setDataLoading(false);
+        }
+    };
+
+    const deleteKnowledgeEntry = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this entry?')) return;
+        try {
+            const res = await fetch(`${API_URL}/api/admin/knowledge/${id}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                fetchKnowledgeBase(); // Refresh list
+            } else {
+                alert('Failed to delete entry');
+            }
+        } catch {
+            alert('Error deleting entry');
+        }
+    };
+
+    const openEntryModal = (entry?: any) => {
+        if (entry) {
+            setEditingEntry(entry);
+            setEntryForm({
+                query: entry.query,
+                title: entry.title,
+                url: entry.url,
+                content: entry.content
+            });
+        } else {
+            setEditingEntry(null);
+            setEntryForm({ query: '', title: '', url: '', content: '' });
+        }
+        setIsEntryModalOpen(true);
+    };
+
+    const handleSaveEntry = async () => {
+        if (!entryForm.query || !entryForm.title || !entryForm.content) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const endpoint = editingEntry
+            ? `${API_URL}/api/admin/knowledge/${editingEntry.id}`
+            : `${API_URL}/api/admin/knowledge`;
+
+        const method = editingEntry ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entryForm),
+            });
+
+            if (res.ok) {
+                setIsEntryModalOpen(false);
+                fetchKnowledgeBase();
+                alert(editingEntry ? 'Entry updated successfully' : 'Entry added successfully');
+            } else {
+                alert('Failed to save entry');
+            }
+        } catch {
+            alert('Error saving entry');
+        }
+    };
 
     const testModel = async () => {
         if (!testPrompt.trim()) return;
@@ -241,11 +340,12 @@ export default function AdminPage() {
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6">
-                    {(['overview', 'users', 'ai'] as const).map(tabId => {
+                    {(['overview', 'users', 'ai', 'data'] as const).map(tabId => {
                         const tab = {
                             overview: { label: 'Overview', icon: Activity },
                             users: { label: 'Users', icon: Users },
                             ai: { label: 'AI Instructions', icon: FileText },
+                            data: { label: 'Scraper Data', icon: Server },
                         }[tabId];
                         return (
                             <button
@@ -496,6 +596,173 @@ export default function AdminPage() {
                         </a>
                     </div>
                 </motion.div>
+                {/* Scraper Data Tab */}
+                {activeTab === 'data' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-card p-6"
+                    >
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                            <Server className="w-5 h-5 text-blue-400" />
+                            Scraper Knowledge Base
+                        </h2>
+
+                        <div className="flex justify-between items-center mb-6">
+                            <p className="text-gray-400 text-sm">
+                                View and manage the information scraped by the AI from university websites.
+                            </p>
+                            <button
+                                onClick={() => openEntryModal()}
+                                className="btn-primary flex items-center gap-2 text-sm py-2"
+                            >
+                                <Plus className="w-4 h-4" /> Add New Data
+                            </button>
+                        </div>
+
+                        {dataLoading ? (
+                            <div className="flex justify-center p-8">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                            </div>
+                        ) : knowledgeEntries.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="text-xs text-gray-500 uppercase border-b border-white/10">
+                                            <th className="p-3">Query</th>
+                                            <th className="p-3">Title</th>
+                                            <th className="p-3">Source URL</th>
+                                            <th className="p-3">Date Saved</th>
+                                            <th className="p-3 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {knowledgeEntries.map((entry) => (
+                                            <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                <td className="p-3 font-mono text-xs text-accent-300">{entry.query}</td>
+                                                <td className="p-3 font-medium text-gray-200">{entry.title}</td>
+                                                <td className="p-3 text-gray-400 max-w-xs truncate">
+                                                    <a href={entry.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary-400 hover:underline">
+                                                        {entry.url}
+                                                    </a>
+                                                </td>
+                                                <td className="p-3 text-gray-500 text-xs">
+                                                    {new Date(entry.timestamp * 1000).toLocaleString()}
+                                                </td>
+                                                <td className="p-3 text-right flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => openEntryModal(entry)}
+                                                        className="p-2 hover:bg-white/10 text-gray-500 hover:text-white rounded-lg transition-colors"
+                                                        title="Edit Entry"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteKnowledgeEntry(entry.id)}
+                                                        className="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg transition-colors"
+                                                        title="Delete Entry"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10 border-dashed">
+                                <Server className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                                <h3 className="text-lg font-medium text-gray-300">No Data Scraped Yet</h3>
+                                <p className="text-gray-500 text-sm mt-1">
+                                    The knowledge base is empty. Ask the AI questions in the chat to start populating it with verified university data.
+                                </p>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* Add/Edit Modal */}
+                {isEntryModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        >
+                            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#020617]">
+                                <h2 className="text-xl font-bold text-white">
+                                    {editingEntry ? 'Edit Knowledge Entry' : 'Add New Data'}
+                                </h2>
+                                <button onClick={() => setIsEntryModalOpen(false)} className="text-gray-400 hover:text-white">
+                                    <XCircle className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Search Query</label>
+                                        <input
+                                            type="text"
+                                            value={entryForm.query}
+                                            onChange={e => setEntryForm({ ...entryForm, query: e.target.value })}
+                                            placeholder="e.g. admission dates"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary-500 focus:outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
+                                        <input
+                                            type="text"
+                                            value={entryForm.title}
+                                            onChange={e => setEntryForm({ ...entryForm, title: e.target.value })}
+                                            placeholder="Page Title"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary-500 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Source URL</label>
+                                    <input
+                                        type="text"
+                                        value={entryForm.url}
+                                        onChange={e => setEntryForm({ ...entryForm, url: e.target.value })}
+                                        placeholder="https://..."
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary-500 focus:outline-none font-mono text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Content</label>
+                                    <textarea
+                                        value={entryForm.content}
+                                        onChange={e => setEntryForm({ ...entryForm, content: e.target.value })}
+                                        placeholder="Paste the text content here..."
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary-500 focus:outline-none h-64 font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-white/10 flex justify-end gap-3 bg-[#020617]">
+                                <button
+                                    onClick={() => setIsEntryModalOpen(false)}
+                                    className="px-4 py-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveEntry}
+                                    className="btn-primary px-6 py-2 flex items-center gap-2"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {editingEntry ? 'Save Changes' : 'Add Entry'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
             </div>
         </div>
     );

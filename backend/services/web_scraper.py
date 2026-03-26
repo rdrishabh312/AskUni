@@ -33,24 +33,23 @@ class WebScraperService:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
-    async def search(self, query: str, max_results: Optional[int] = None) -> List[SearchResult]:
+    async def search(self, query: str, max_results: Optional[int] = None, college_id: str = "vidya") -> List[SearchResult]:
         """
-        Search the web using DuckDuckGo.
-        
-        Args:
-            query: Search query string
-            max_results: Maximum number of results to return
-            
-        Returns:
-            List of SearchResult objects
+        Search the web using DuckDuckGo with college-specific site filter.
         """
         results = []
         num_results = max_results or self.max_results
         
+        # Determine strict site filter
+        site_filter = "site:vidya.edu.in"
+        if college_id == "mmdu":
+            site_filter = "site:mmumullana.org"
+        
         try:
             with DDGS() as ddgs:
+                search_query = f"{query} {site_filter}"
                 search_results = list(ddgs.text(
-                    query,
+                    search_query,
                     max_results=num_results
                 ))
                 
@@ -68,12 +67,6 @@ class WebScraperService:
     async def scrape_url(self, url: str) -> Optional[str]:
         """
         Scrape content from a URL.
-        
-        Args:
-            url: The URL to scrape
-            
-        Returns:
-            Extracted text content or None if failed
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -94,29 +87,115 @@ class WebScraperService:
                 if main_content:
                     # Get text and clean it up
                     text = main_content.get_text(separator='\n', strip=True)
-                    # Remove excessive whitespace
                     lines = [line.strip() for line in text.splitlines() if line.strip()]
                     text = '\n'.join(lines)
-                    # Limit content length
-                    return text[:5000] if len(text) > 5000 else text
+                    
+                    # --- DEEP SCRAPING: Recursively scrape linked pages ---
+                    # Generic domain extraction for filtering
+                    from urllib.parse import urlparse, urljoin
+                    base_domain = urlparse(url).netloc
+                    
+                    internal_links = []
+                    for link in soup.find_all('a', href=True):
+                        href = link.get('href', '')
+                        if not href or href.startswith('#') or href.startswith('javascript:'):
+                            continue
+                            
+                        full_url = urljoin(url, href)
+                        
+                        # Only follow links within the same domain
+                        if base_domain in full_url:
+                             if full_url != url and full_url not in internal_links:
+                                 internal_links.append(full_url)
+
+                    # Visit top 3 unique internal links
+                    deep_content = ""
+                    visited_count = 0
+                    for link_url in list(set(internal_links))[:3]:
+                        try:
+                             # print(f"    ↳ Deep scraping linked page: {link_url}")
+                             async with httpx.AsyncClient(timeout=5) as sub_client: 
+                                 sub_resp = await sub_client.get(link_url, headers=self.headers, follow_redirects=True)
+                                 if sub_resp.status_code == 200:
+                                     sub_soup = BeautifulSoup(sub_resp.text, 'lxml')
+                                     for el in sub_soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
+                                         el.decompose()
+                                     sub_main = sub_soup.find('main') or sub_soup.find('body')
+                                     if sub_main:
+                                         sub_text = sub_main.get_text(separator=' ', strip=True)
+                                         deep_content += f"\n\n--- Linked Page: {link_url} ---\n{sub_text[:1500]}"
+                                         visited_count += 1
+                        except:
+                            continue
+
+                    full_content = (text[:5000] if len(text) > 5000 else text) + deep_content
+                    return full_content
                     
                 return None
         except Exception as e:
             print(f"Scrape error for {url}: {str(e)}")
             return None
 
-    async def search_and_scrape(self, query: str, max_results: Optional[int] = None) -> Dict:
+    def is_university_related(self, query: str) -> bool:
+        """Check if query is related to university context."""
+        keywords = [
+            'vidya', 'university', 'college', 'institute', 'campus',
+            'admission', 'course', 'fee', 'placement', 'result', 'exam',
+            'hostel', 'mess', 'canteen', 'library', 'lab', 'laboratory',
+            'auditorium', 'ground', 'sport', 'building', 'block',
+            'department', 'school', 'faculty', 'director', 'registrar',
+            'meerut', 'delhi', 'ncr', 'address', 'contact', 'location',
+            'btech', 'mtech', 'mba', 'bba', 'bca', 'llb', 'mca', 'diploma', 'polytechnic',
+            'fashion', 'journalism', 'fine arts', 'phd',
+            'mmdu', 'mmu', 'mullana', 'maharishi', 'markandeshwar', 'ambala', 'haryana'
+        ]
+        query_lower = query.lower()
+        return any(k in query_lower for k in keywords)
+
+    async def search_and_scrape(self, query: str, max_results: Optional[int] = None, college_id: str = "vidya") -> Dict:
         """
         Search the web and scrape content from top results.
-        
-        Args:
-            query: Search query
-            max_results: Number of results to process
-            
-        Returns:
-            Dictionary with search results and combined context
         """
-        results = await self.search(query, max_results)
+        # 1. Check Cache First
+        from services.knowledge_service import knowledge_service
+        cached = knowledge_service.search_cache(query, college_id=college_id)
+        if cached:
+            print(f"✨ Using cached {college_id} result for: {query}")
+            return {
+                "query": query,
+                "sources": cached["sources"],
+                "context": cached["context"],
+                "cached": True
+            }
+
+        # 2. Relevance Check (Before External Search)
+        if not self.is_university_related(query):
+            print(f"⛔ Query '{query}' rejected as non-university related.")
+            return {
+                "query": query,
+                "sources": [],
+                "context": "QUERY_REJECTED: Please ask questions related to the university (Admissions, Courses, Campus, etc.).",
+                "rejected": True
+            }
+
+        # 3. Perform Web Search (External)
+        results = await self.search(query, max_results, college_id=college_id)
+        
+        # Fallback if search failed or returned no results
+        if not results:
+            print(f"⚠️ Search failed or no results. Using fallback to {college_id} homepage.")
+            if college_id == "mmdu":
+                 results.append(SearchResult(
+                    title="MM(DU) Official Website",
+                    url="https://www.mmumullana.org",
+                    snippet="Official website of Maharishi Markandeshwar (Deemed to be University)."
+                ))
+            else:
+                results.append(SearchResult(
+                    title="Vidya University Official Website",
+                    url="https://www.vidya.edu.in",
+                    snippet="Official website of Vidya Knowledge Park / Vidya University, Meerut."
+                ))
         
         # Scrape content from top results
         scraped_count = 0
@@ -125,6 +204,9 @@ class WebScraperService:
             if content:
                 result.content = content
                 scraped_count += 1
+                
+                # SAVE TO CACHE (Knowledge Base) with College ID
+                knowledge_service.add_entry(query, result.title, result.url, content, college_id=college_id)
         
         # Build combined context for AI
         context_parts = []

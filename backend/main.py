@@ -14,6 +14,9 @@ from routes import chat, admin
 settings = get_settings()
 
 
+
+import asyncio
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
@@ -21,9 +24,55 @@ async def lifespan(app: FastAPI):
     print(f"🚀 Starting {settings.app_name} v{settings.app_version}")
     print(f"📡 Ollama Host: {settings.ollama_host}")
     print(f"🤖 Default Model: {settings.ollama_model}")
+    
+    # Start Background Refresh Task
+    asyncio.create_task(refresh_knowledge_base())
+    
     yield
     # Shutdown
     print("👋 Shutting down AskUni Backend")
+
+
+async def refresh_knowledge_base():
+    """Background task to refresh knowledge base entries every 20 minutes."""
+    from services.knowledge_service import knowledge_service
+    from services.web_scraper import web_scraper
+    
+    print("⏰ Background Scraper Service Started (Interval: 20m)")
+    
+    while True:
+        try:
+            # Wait 20 minutes before next run (or run immediately on first loop? 
+            # Better to wait initially or run? Let's wait 20m to avoid slowing startup)
+            await asyncio.sleep(1200) 
+            
+            print("🔄 Auto-Refresh: Checking knowledge base for updates...")
+            entries = knowledge_service.get_all_entries()
+            count = 0
+            for entry in entries:
+                # Valid URL check
+                if not entry['url'] or not entry['url'].startswith('http'):
+                    continue
+                    
+                # Re-scrape
+                try:
+                    content = await web_scraper.scrape_url(entry['url'])
+                    if content and len(content) > 100:
+                        # Only update if content changed or just update timestamp
+                        knowledge_service.update_entry(
+                            entry_id=entry['id'],
+                            content=content
+                        )
+                        count += 1
+                except Exception as e:
+                    print(f"⚠️ Failed to refresh {entry['url']}: {e}")
+            
+            if count > 0:
+                print(f"✅ Auto-Refreshed {count} knowledge entries")
+                
+        except Exception as e:
+            print(f"❌ Auto-Refresh Error: {e}")
+            await asyncio.sleep(60) # Wait a bit on error before retrying
 
 
 # Create FastAPI application

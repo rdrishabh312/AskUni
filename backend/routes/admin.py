@@ -183,3 +183,66 @@ async def update_system_prompt(request: SystemPromptRequest):
             detail="System prompt must be at least 10 characters"
         )
 
+
+@router.get("/knowledge")
+async def get_knowledge_base():
+    """
+    Get all entries from the knowledge base.
+    """
+    from services.knowledge_service import knowledge_service
+    return {"entries": knowledge_service.get_all_entries()}
+
+
+@router.delete("/knowledge/{entry_id}")
+async def delete_knowledge_entry(entry_id: str):
+    """
+    Delete a knowledge base entry.
+    """
+    from services.knowledge_service import knowledge_service
+    success = knowledge_service.delete_entry(entry_id)
+    if success:
+        return {"success": True, "message": "Entry deleted"}
+    else:
+        raise HTTPException(status_code=404, detail="Entry not found")
+
+
+class KnowledgeEntryRequest(BaseModel):
+    """Request model for knowledge entry."""
+    query: str
+    title: str
+    url: str
+    content: str
+
+
+@router.post("/knowledge")
+async def create_knowledge_entry(request: KnowledgeEntryRequest):
+    """
+    Manually add a new entry to the knowledge base.
+    """
+    from services.knowledge_service import knowledge_service
+    entry = knowledge_service.add_entry(
+        query=request.query,
+        title=request.title,
+        url=request.url,
+        content=request.content
+    )
+    return {"success": True, "entry": entry}
+
+
+@router.put("/knowledge/{entry_id}")
+async def update_knowledge_entry(entry_id: str, request: KnowledgeEntryRequest):
+    """
+    Update an existing knowledge base entry.
+    """
+    from services.knowledge_service import knowledge_service
+    success = knowledge_service.update_entry(
+        entry_id=entry_id,
+        query=request.query,
+        title=request.title,
+        url=request.url,
+        content=request.content
+    )
+    if success:
+        return {"success": True, "message": "Entry updated"}
+    else:
+        raise HTTPException(status_code=404, detail="Entry not found")

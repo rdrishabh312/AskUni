@@ -27,7 +27,7 @@ type Step = 'welcome' | 'details' | 'email' | 'password' | 'phone' | 'otp' | 'co
 
 export default function LoginPage() {
     const router = useRouter();
-    const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithOtp, verifyOtp, user, isLoading: authLoading } = useAuth();
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithOtp, verifyOtp, signInAsDev, user, isLoading: authLoading } = useAuth();
 
     const [step, setStep] = useState<Step>('welcome');
     const [isSignUp, setIsSignUp] = useState(false);
@@ -352,6 +352,22 @@ export default function LoginPage() {
                                     </svg>
                                 )}
                                 Google
+                            </button>
+
+                            {/* Dev Login Bypass */}
+                            <button
+                                onClick={async () => {
+                                    const code = window.prompt('Enter Developer Access Code:');
+                                    if (code === 'admin123') {
+                                        await signInAsDev();
+                                        router.push('/chat');
+                                    } else if (code) {
+                                        alert('Invalid Access Code');
+                                    }
+                                }}
+                                className="w-full mt-3 p-2 rounded-xl text-xs font-mono text-gray-600 hover:text-green-500 hover:bg-green-500/10 transition-all border border-transparent hover:border-green-500/20"
+                            >
+                                [DEV] Bypass Auth
                             </button>
                         </motion.div>
                     )}

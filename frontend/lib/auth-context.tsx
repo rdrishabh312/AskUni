@@ -24,6 +24,7 @@ interface AuthContextType {
     updatePhone: (phone: string) => Promise<{ error: AuthError | null }>;
     startTrial: () => void;
     endTrial: () => void;
+    signInAsDev: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const checkSession = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                setUser(session?.user ?? null);
+
+                // Check if mock user exists
+                const mockUserStr = localStorage.getItem('askuni_mock_user');
+                if (mockUserStr) {
+                    setUser(JSON.parse(mockUserStr));
+                } else {
+                    setUser(session?.user ?? null);
+                }
             } catch (error) {
                 console.error('Session check error:', error);
             } finally {
@@ -58,6 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            // Respect mock session if active
+            const mockUser = localStorage.getItem('askuni_mock_user');
+            if (mockUser) {
+                return;
+            }
             setUser(session?.user ?? null);
             if (session?.user) {
                 // End trial when user logs in
@@ -106,11 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(timer);
     }, [isTrial, trialTimeLeft]);
 
+    const getRedirectUrl = () => {
+        const isProd = window.location.hostname !== 'localhost';
+        return `${window.location.origin}${isProd ? '/AskUni' : ''}/chat`;
+    };
+
     const signInWithGoogle = async () => {
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: getRedirectUrl(),
             },
         });
     };
@@ -128,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email,
             password,
             options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
+                emailRedirectTo: getRedirectUrl(),
                 data: userData,
             },
         });
@@ -137,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
         await supabase.auth.signOut();
+        localStorage.removeItem('askuni_mock_user'); // Clear mock session
         setUser(null);
         setIsTrial(false);
         localStorage.removeItem('askuni_trial_start');
@@ -185,6 +204,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('askuni_message_count');
     };
 
+    const signInAsDev = async () => {
+        const mockUser: User = {
+            id: 'dev-bypass-id',
+            app_metadata: { provider: 'email' },
+            user_metadata: { name: 'Developer', email: 'rdrishabh312@gmail.com' },
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+            email: 'rdrishabh312@gmail.com',
+            phone: '',
+            role: 'authenticated',
+            updated_at: new Date().toISOString()
+        };
+        localStorage.setItem('askuni_mock_user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        setIsTrial(false);
+        localStorage.removeItem('askuni_trial_start');
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -200,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             updatePhone,
             startTrial,
             endTrial,
+            signInAsDev,
         }}>
             {children}
         </AuthContext.Provider>

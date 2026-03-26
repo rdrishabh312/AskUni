@@ -49,10 +49,36 @@ async def chat(request: ChatRequest):
     """
     Send a message and get an AI response.
     Optionally enables web search for context.
+    Dispatches to appropriate service based on keywords.
     """
     try:
         # Convert messages to dict format
         messages = [{"role": m.role, "content": m.content} for m in request.messages]
+        
+        # Smart Routing Logic
+        # Smart Routing Logic
+        active_service = ollama_service  # Default
+        college_id = "vidya" # Default
+        
+        # Scan history backwards to find context
+        # "Sticky Context": If user talked about MMDU 3 messages ago, 
+        # and current msg is "What is the fee?", we assume MMDU.
+        for m in reversed(messages):
+            if m["role"] == "user":
+                content_lower = m["content"].lower()
+                
+                # Check for MMDU context
+                if any(x in content_lower for x in ["mmdu", "maharishi", "mmu", "mullana"]):
+                    from services.other_college_service import other_college_service
+                    active_service = other_college_service
+                    college_id = "mmdu"
+                    break # Found context, stop scanning
+                
+                # Check for Vidya context
+                elif any(x in content_lower for x in ["vidya", "vkp", "meerut"]):
+                    active_service = ollama_service
+                    college_id = "vidya"
+                    break # Found context, stop scanning
         
         context = None
         sources = None
@@ -68,22 +94,21 @@ async def chat(request: ChatRequest):
                         break
             
             if search_query:
-                search_result = await web_scraper.search_and_scrape(search_query)
+                # Pass college_id to scraper
+                search_result = await web_scraper.search_and_scrape(search_query, college_id=college_id)
                 context = search_result.get("context")
                 sources = search_result.get("sources", [])
         
-        # Get AI response
-        response = await ollama_service.chat(messages, context)
+        # Get AI response from selected service
+        response = await active_service.chat(messages, context)
         
         # Log to Supabase
         if request.user_id:
-            # Log user message (last one)
-            last_user_msg = next((m for m in reversed(messages) if m["role"] == "user"), None)
             if last_user_msg:
-                supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", ollama_service.model)
+                supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", active_service.model)
             
             # Log assistant response
-            supabase_service.log_chat(request.user_id, response, "assistant", ollama_service.model)
+            supabase_service.log_chat(request.user_id, response, "assistant", active_service.model)
         
         return ChatResponse(response=response, sources=sources)
     
@@ -101,6 +126,29 @@ async def chat_stream(request: ChatRequest):
         try:
             messages = [{"role": m.role, "content": m.content} for m in request.messages]
             
+            # Smart Routing Logic
+            # Smart Routing Logic
+            active_service = ollama_service  # Default
+            college_id = "vidya" # Default
+            
+            # Scan history backwards to find context
+            for m in reversed(messages):
+                if m["role"] == "user":
+                    content_lower = m["content"].lower()
+                    
+                    # Check for MMDU context
+                    if any(x in content_lower for x in ["mmdu", "maharishi", "mmu", "mullana"]):
+                        from services.other_college_service import other_college_service
+                        active_service = other_college_service
+                        college_id = "mmdu"
+                        break # Found context, stop scanning
+                    
+                    # Check for Vidya context
+                    elif any(x in content_lower for x in ["vidya", "vkp", "meerut"]):
+                        active_service = ollama_service
+                        college_id = "vidya"
+                        break # Found context, stop scanning
+            
             context = None
             sources = []
             
@@ -114,7 +162,8 @@ async def chat_stream(request: ChatRequest):
                             break
                 
                 if search_query:
-                    search_result = await web_scraper.search_and_scrape(search_query)
+                    # Pass college_id to scraper
+                    search_result = await web_scraper.search_and_scrape(search_query, college_id=college_id)
                     context = search_result.get("context")
                     sources = search_result.get("sources", [])
                     
@@ -123,24 +172,21 @@ async def chat_stream(request: ChatRequest):
                         yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n"
                         sources_sent = True
             
-            # Stream response
+            # Stream response from selected service
             full_response = ""
-            async for chunk in ollama_service.chat_stream(messages, context):
+            async for chunk in active_service.chat_stream(messages, context):
                 if chunk:
                     full_response += chunk
-                    yield f"data: {json.dumps({'response': chunk, 'sources': sources if not sources_sent else None})}\n\n"
-                    sources_sent = True # Mark sources as sent if they were included with the first chunk
+                    yield f"data: {json.dumps({'type': 'content', 'data': chunk})}\n\n"
             
             # Log complete interaction
             if request.user_id:
-                # Log user message
-                last_user_msg = next((m for m in reversed(messages) if m["role"] == "user"), None)
                 if last_user_msg:
-                    supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", ollama_service.model)
+                    supabase_service.log_chat(request.user_id, last_user_msg["content"], "user", active_service.model)
                 
                 # Log assistant response
                 if full_response:
-                    supabase_service.log_chat(request.user_id, full_response, "assistant", ollama_service.model)
+                    supabase_service.log_chat(request.user_id, full_response, "assistant", active_service.model)
             
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             

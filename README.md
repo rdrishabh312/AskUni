@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="frontend/app/icon.jpeg" alt="AskUni Logo" width="150" style="border-radius: 10px;" />
+</div>
+
 # AskUni - AI-Powered University Assistant
 
 AskUni is an intelligent AI assistant designed to help students navigate university life. It answers questions about courses, admissions, events, and more instantly using a local AI model.
